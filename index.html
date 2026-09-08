@@ -217,7 +217,7 @@ def test_divide_by_zero():
 // All problems live in this repo, under the "problems" folder, one
 // subfolder per problem (each containing a readme.md, a source .py
 // file, and a test .py file).
-const GITHUB_REPO = "irawoodring/code_practice_site";
+const GITHUB_REPO = "irawoodring/learn_to_code";
 const GITHUB_BRANCH = "main";
 const PROBLEMS_PATH = "problems";
 
@@ -435,9 +435,11 @@ async function loadProblem(folderName, clickedBtn) {
     const files = await githubApi(`${PROBLEMS_PATH}/${folderName}`);
 
     const readmeFile = files.find((f) => /^readme\.md$/i.test(f.name));
-    const testFile = files.find((f) => /^test_.*\.py$/i.test(f.name) || /_test\.py$/i.test(f.name));
+    const isTestFile = (name) =>
+      /^test\.py$/i.test(name) || /^test_.*\.py$/i.test(name) || /_test\.py$/i.test(name);
+    const testFile = files.find((f) => f.type === "file" && isTestFile(f.name));
     const sourceFile = files.find(
-      (f) => f.type === "file" && f.name.endsWith(".py") && f !== testFile && !/^test_.*\.py$/i.test(f.name) && !/_test\.py$/i.test(f.name)
+      (f) => f.type === "file" && f.name.endsWith(".py") && !isTestFile(f.name)
     );
 
     if (!testFile || !sourceFile) {
@@ -459,7 +461,7 @@ async function loadProblem(folderName, clickedBtn) {
     if (readmeText) {
       document.getElementById("readme-title").textContent = prettifyName(folderName);
       document.getElementById("readme-content").innerHTML = renderMarkdown(readmeText);
-      readmePanel.style.display = "";
+      readmePanel.style.display = "block";
     } else {
       readmePanel.style.display = "none";
     }
