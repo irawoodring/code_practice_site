@@ -223,6 +223,7 @@ const PROBLEMS_PATH = "problems";
 
 let pyodideReadyPromise = null;
 let pytestInstalled = false;
+let sourceModuleName = "mymodule";
 
 async function getPyodide() {
   if (!pyodideReadyPromise) {
@@ -260,8 +261,10 @@ async function runTests() {
     const pyodide = await getPyodide();
     await ensurePytest(pyodide, setStatus);
     setStatus("Running tests…");
-    // Write the user's source and test files into Pyodide's virtual filesystem
-    pyodide.FS.writeFile("/home/pyodide/mymodule.py", sourceCode);
+    // Write the user's source and test files into Pyodide's virtual filesystem,
+    // using the actual source module name so `from <name> import ...` in the
+    // test file resolves correctly.
+    pyodide.FS.writeFile(`/home/pyodide/${sourceModuleName}.py`, sourceCode);
     pyodide.FS.writeFile("/home/pyodide/test_module.py", testCode);
     const runner = `
 import sys, io, contextlib, importlib, pytest
@@ -269,7 +272,7 @@ sys.path.insert(0, "/home/pyodide")
 # Drop any previously-imported copies so edited source/test code
 # actually gets re-imported instead of reusing stale cached modules.
 for _modname in list(sys.modules):
-    if _modname == "mymodule" or _modname == "test_module":
+    if _modname == "${sourceModuleName}" or _modname == "test_module":
         del sys.modules[_modname]
 importlib.invalidate_caches()
 buf = io.StringIO()
@@ -456,6 +459,7 @@ async function loadProblem(folderName, clickedBtn) {
     document.getElementById("test-code").value = testText;
     document.getElementById("source-filename").textContent = sourceFile.name;
     document.getElementById("test-filename").textContent = testFile.name;
+    sourceModuleName = sourceFile.name.replace(/\.py$/i, "");
 
     const readmePanel = document.getElementById("readme-panel");
     if (readmeText) {
