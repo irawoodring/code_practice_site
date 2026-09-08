@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Pytest in the Browser</title>
+<title>Code Practice</title>
 <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
 <style>
   :root {
@@ -29,7 +29,6 @@
   header { margin-bottom: 24px; }
   h1 { font-size: 22px; font-weight: 600; margin: 0 0 4px; }
   p.sub { color: var(--muted); margin: 0; font-size: 14px; }
-
   .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -37,7 +36,6 @@
     margin-bottom: 16px;
   }
   @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
-
   .panel {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -67,7 +65,6 @@
     outline: none;
     tab-size: 4;
   }
-
   .controls {
     display: flex;
     align-items: center;
@@ -86,47 +83,61 @@
   }
   button#run:disabled { opacity: 0.5; cursor: default; }
   button#run:hover:not(:disabled) { filter: brightness(1.08); }
-
   .status { font-size: 13px; color: var(--muted); font-family: var(--mono); }
   .status.pass { color: var(--pass); }
   .status.fail { color: var(--fail); }
 
-  #github-panel { margin-bottom: 16px; }
-  .gh-form {
-    display: grid;
-    grid-template-columns: 1.4fr 0.8fr 1.6fr 1.6fr auto;
-    gap: 10px;
+  #problems-panel { margin-bottom: 16px; }
+  #problem-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     padding: 14px;
-    align-items: end;
   }
-  @media (max-width: 900px) { .gh-form { grid-template-columns: 1fr 1fr; } }
-  .gh-field { display: flex; flex-direction: column; gap: 4px; }
-  .gh-field label { font-size: 11px; color: var(--muted); }
-  .gh-field input {
+  .problem-btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .problem-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .problem-btn.active { border-color: var(--accent); color: var(--accent); background: rgba(79, 176, 255, 0.1); }
+  .problem-btn:disabled { opacity: 0.5; cursor: default; }
+  #problems-status { padding: 0 14px 14px; margin: 0; }
+
+  #readme-panel { margin-bottom: 16px; display: none; }
+  #readme-content {
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  #readme-content h1, #readme-content h2, #readme-content h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+  }
+  #readme-content p { margin: 0 0 10px; }
+  #readme-content code {
+    background: #06090d;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  #readme-content pre {
     background: #06090d;
     border: 1px solid var(--border);
     border-radius: 6px;
-    color: var(--text);
-    padding: 8px 10px;
+    padding: 12px;
+    overflow-x: auto;
     font-family: var(--mono);
     font-size: 13px;
-    outline: none;
   }
-  .gh-field input:focus { border-color: var(--accent); }
-  #gh-load {
-    background: transparent;
-    color: var(--accent);
-    border: 1px solid var(--accent);
-    border-radius: 6px;
-    padding: 9px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  #gh-load:hover:not(:disabled) { background: rgba(79, 176, 255, 0.1); }
-  #gh-load:disabled { opacity: 0.5; cursor: default; }
-  #gh-status { padding: 0 14px 14px; margin: 0; }
+  #readme-content pre code { background: none; border: none; padding: 0; }
+  #readme-content ul { margin: 0 0 10px 20px; padding: 0; }
 
   #output {
     background: #06090d;
@@ -147,62 +158,42 @@
 </head>
 <body>
 <div class="wrap">
-
   <header>
-    <h1>Pytest in the Browser</h1>
-    <p class="sub">Runs entirely client-side via Pyodide (WebAssembly Python). No server, no data leaves the page.</p>
+    <h1>Coding Practice</h1>
+    <p class="sub">Note, this runs entirely client-side via Pyodide (WebAssembly Python). No server, no data leaves the page.</p>
+    <p class="sub">This means that anything you have here will not be saved if you leave this page. If you want to code and come back later, you will need to leave the page up.</p>
   </header>
 
-  <div class="panel" id="github-panel">
-    <div class="panel-head"><span>Load from GitHub</span></div>
-    <div class="gh-form">
-      <div class="gh-field">
-        <label for="gh-repo">Repo</label>
-        <input id="gh-repo" type="text" placeholder="owner/repo" value="" />
-      </div>
-      <div class="gh-field">
-        <label for="gh-branch">Branch</label>
-        <input id="gh-branch" type="text" placeholder="main" value="main" />
-      </div>
-      <div class="gh-field">
-        <label for="gh-source-path">Source file path</label>
-        <input id="gh-source-path" type="text" placeholder="src/mymodule.py" />
-      </div>
-      <div class="gh-field">
-        <label for="gh-test-path">Test file path</label>
-        <input id="gh-test-path" type="text" placeholder="tests/test_module.py" />
-      </div>
-      <button id="gh-load">Load files</button>
+  <div class="panel" id="problems-panel">
+    <div class="panel-head"><span>Practice Problems</span></div>
+    <div id="problem-list">
+      <span class="status">Loading problem list…</span>
     </div>
-    <div id="gh-status" class="status"></div>
+    <p id="problems-status" class="status"></p>
+  </div>
+
+  <div class="panel" id="readme-panel">
+    <div class="panel-head"><span id="readme-title">Problem</span></div>
+    <div id="readme-content"></div>
   </div>
 
   <div class="grid">
     <div class="panel">
-      <div class="panel-head"><span>Source — <code>mymodule.py</code></span></div>
+      <div class="panel-head"><span>Source — <code id="source-filename">mymodule.py</code></span></div>
       <textarea id="source-code" spellcheck="false">def add(a, b):
     return a + b
-
-
 def divide(a, b):
     return a / b
 </textarea>
     </div>
-
     <div class="panel">
-      <div class="panel-head"><span>Tests — <code>test_module.py</code></span></div>
+      <div class="panel-head"><span>Tests — <code id="test-filename">test_module.py</code></span></div>
       <textarea id="test-code" spellcheck="false">from mymodule import add, divide
 import pytest
-
-
 def test_add():
     assert add(2, 3) == 5
-
-
 def test_divide():
     assert divide(10, 2) == 5
-
-
 def test_divide_by_zero():
     with pytest.raises(ZeroDivisionError):
         divide(1, 0)
@@ -219,10 +210,17 @@ def test_divide_by_zero():
     <div class="panel-head"><span>Output</span></div>
     <div id="output" class="empty">Test output will appear here.</div>
   </div>
-
 </div>
 
 <script>
+// ---- Repo configuration ----
+// All problems live in this repo, under the "problems" folder, one
+// subfolder per problem (each containing a readme.md, a source .py
+// file, and a test .py file).
+const GITHUB_REPO = "irawoodring/code_practice_site";
+const GITHUB_BRANCH = "main";
+const PROBLEMS_PATH = "problems";
+
 let pyodideReadyPromise = null;
 let pytestInstalled = false;
 
@@ -233,9 +231,9 @@ async function getPyodide() {
   return pyodideReadyPromise;
 }
 
-async function ensurePytest(pyodide, setStatus) {
+async function ensurePytest(pyodide, setStatusFn) {
   if (pytestInstalled) return;
-  setStatus("Installing pytest (first run only)…");
+  setStatusFn("Installing pytest (first run only)…");
   await pyodide.loadPackage("micropip");
   const micropip = pyodide.pyimport("micropip");
   // pytest and its dependencies are pure-Python wheels, installable via micropip
@@ -254,45 +252,34 @@ async function runTests() {
   const outputEl = document.getElementById("output");
   const sourceCode = document.getElementById("source-code").value;
   const testCode = document.getElementById("test-code").value;
-
   runBtn.disabled = true;
   outputEl.classList.remove("empty");
   outputEl.textContent = "";
   setStatus("Starting up…");
-
   try {
     const pyodide = await getPyodide();
     await ensurePytest(pyodide, setStatus);
-
     setStatus("Running tests…");
-
     // Write the user's source and test files into Pyodide's virtual filesystem
     pyodide.FS.writeFile("/home/pyodide/mymodule.py", sourceCode);
     pyodide.FS.writeFile("/home/pyodide/test_module.py", testCode);
-
     const runner = `
 import sys, io, contextlib, importlib, pytest
-
 sys.path.insert(0, "/home/pyodide")
-
 # Drop any previously-imported copies so edited source/test code
 # actually gets re-imported instead of reusing stale cached modules.
 for _modname in list(sys.modules):
     if _modname == "mymodule" or _modname == "test_module":
         del sys.modules[_modname]
 importlib.invalidate_caches()
-
 buf = io.StringIO()
 with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
     exit_code = pytest.main(["-v", "--tb=short", "/home/pyodide/test_module.py"])
-
 buf.getvalue(), int(exit_code)
 `;
     const result = await pyodide.runPythonAsync(runner);
     const [text, exitCode] = result.toJs();
-
     outputEl.textContent = text;
-
     if (exitCode === 0) {
       setStatus("All tests passed", "pass");
     } else {
@@ -306,57 +293,195 @@ buf.getvalue(), int(exit_code)
   }
 }
 
-function setGhStatus(text, kind) {
-  const el = document.getElementById("gh-status");
+function setProblemsStatus(text, kind) {
+  const el = document.getElementById("problems-status");
   el.textContent = text;
   el.className = "status" + (kind ? " " + kind : "");
 }
 
-async function fetchRawFile(repo, branch, path) {
-  const url = `https://raw.githubusercontent.com/${repo}/${branch}/${path}`;
-  const res = await fetch(url);
+// Minimal, safe-ish markdown -> HTML for displaying a problem's readme.
+// Handles headers, fenced code blocks, inline code, bold/italic,
+// paragraphs and simple bullet lists. Good enough for problem
+// descriptions without pulling in a full markdown library.
+function renderMarkdown(md) {
+  const escapeHtml = (s) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const lines = md.replace(/\r\n/g, "\n").split("\n");
+  let html = "";
+  let inCodeBlock = false;
+  let codeBuffer = [];
+  let inList = false;
+
+  const closeList = () => {
+    if (inList) { html += "</ul>"; inList = false; }
+  };
+
+  const inlineFormat = (text) => {
+    let t = escapeHtml(text);
+    t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    return t;
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine;
+
+    if (line.trim().startsWith("```")) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        codeBuffer = [];
+      } else {
+        inCodeBlock = false;
+        html += `<pre><code>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`;
+      }
+      continue;
+    }
+    if (inCodeBlock) {
+      codeBuffer.push(line);
+      continue;
+    }
+
+    const headerMatch = line.match(/^(#{1,3})\s+(.*)$/);
+    if (headerMatch) {
+      closeList();
+      const level = headerMatch[1].length;
+      html += `<h${level}>${inlineFormat(headerMatch[2])}</h${level}>`;
+      continue;
+    }
+
+    const bulletMatch = line.match(/^\s*[-*]\s+(.*)$/);
+    if (bulletMatch) {
+      if (!inList) { html += "<ul>"; inList = true; }
+      html += `<li>${inlineFormat(bulletMatch[1])}</li>`;
+      continue;
+    }
+
+    if (line.trim() === "") {
+      closeList();
+      continue;
+    }
+
+    closeList();
+    html += `<p>${inlineFormat(line)}</p>`;
+  }
+  closeList();
+  if (inCodeBlock && codeBuffer.length) {
+    html += `<pre><code>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`;
+  }
+  return html;
+}
+
+async function githubApi(path) {
+  const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`;
+  const res = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (!res.ok) {
-    throw new Error(`${path} — HTTP ${res.status} (check repo/branch/path)`);
+    throw new Error(`GitHub API ${res.status} for ${path}`);
+  }
+  return res.json();
+}
+
+async function fetchRaw(downloadUrl) {
+  const res = await fetch(downloadUrl);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching ${downloadUrl}`);
   }
   return res.text();
 }
 
-async function loadFromGithub() {
-  const loadBtn = document.getElementById("gh-load");
-  const repo = document.getElementById("gh-repo").value.trim().replace(/^\/|\/$/g, "");
-  const branch = document.getElementById("gh-branch").value.trim() || "main";
-  const sourcePath = document.getElementById("gh-source-path").value.trim().replace(/^\//, "");
-  const testPath = document.getElementById("gh-test-path").value.trim().replace(/^\//, "");
+function prettifyName(folderName) {
+  return folderName
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
 
-  if (!repo || !sourcePath || !testPath) {
-    setGhStatus("Fill in repo, source path, and test path first.", "fail");
-    return;
+async function loadProblemList() {
+  const listEl = document.getElementById("problem-list");
+  try {
+    const entries = await githubApi(PROBLEMS_PATH);
+    const folders = entries.filter((e) => e.type === "dir");
+
+    if (folders.length === 0) {
+      listEl.innerHTML = "";
+      setProblemsStatus("No problems found in the problems/ folder.", "fail");
+      return;
+    }
+
+    listEl.innerHTML = "";
+    folders
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .forEach((folder) => {
+        const btn = document.createElement("button");
+        btn.className = "problem-btn";
+        btn.textContent = prettifyName(folder.name);
+        btn.addEventListener("click", () => loadProblem(folder.name, btn));
+        listEl.appendChild(btn);
+      });
+    setProblemsStatus("");
+  } catch (err) {
+    listEl.innerHTML = "";
+    setProblemsStatus("Couldn't load problem list: " + err.message, "fail");
   }
+}
 
-  loadBtn.disabled = true;
-  setGhStatus(`Fetching from ${repo}@${branch}…`);
+async function loadProblem(folderName, clickedBtn) {
+  const allBtns = document.querySelectorAll(".problem-btn");
+  allBtns.forEach((b) => { b.disabled = true; b.classList.remove("active"); });
+  clickedBtn.classList.add("active");
+  setProblemsStatus(`Loading "${prettifyName(folderName)}"…`);
 
   try {
-    const [sourceText, testText] = await Promise.all([
-      fetchRawFile(repo, branch, sourcePath),
-      fetchRawFile(repo, branch, testPath),
+    const files = await githubApi(`${PROBLEMS_PATH}/${folderName}`);
+
+    const readmeFile = files.find((f) => /^readme\.md$/i.test(f.name));
+    const testFile = files.find((f) => /^test_.*\.py$/i.test(f.name) || /_test\.py$/i.test(f.name));
+    const sourceFile = files.find(
+      (f) => f.type === "file" && f.name.endsWith(".py") && f !== testFile && !/^test_.*\.py$/i.test(f.name) && !/_test\.py$/i.test(f.name)
+    );
+
+    if (!testFile || !sourceFile) {
+      throw new Error("Couldn't find both a source .py file and a test .py file in this problem folder.");
+    }
+
+    const [sourceText, testText, readmeText] = await Promise.all([
+      fetchRaw(sourceFile.download_url),
+      fetchRaw(testFile.download_url),
+      readmeFile ? fetchRaw(readmeFile.download_url) : Promise.resolve(null),
     ]);
 
     document.getElementById("source-code").value = sourceText;
     document.getElementById("test-code").value = testText;
+    document.getElementById("source-filename").textContent = sourceFile.name;
+    document.getElementById("test-filename").textContent = testFile.name;
 
-    setGhStatus(`Loaded ${sourcePath} and ${testPath} from ${repo}@${branch}`, "pass");
+    const readmePanel = document.getElementById("readme-panel");
+    if (readmeText) {
+      document.getElementById("readme-title").textContent = prettifyName(folderName);
+      document.getElementById("readme-content").innerHTML = renderMarkdown(readmeText);
+      readmePanel.style.display = "";
+    } else {
+      readmePanel.style.display = "none";
+    }
+
+    // Clear any previous test output since we've loaded new code.
+    const outputEl = document.getElementById("output");
+    outputEl.textContent = "Test output will appear here.";
+    outputEl.classList.add("empty");
+    setStatus("Ready");
+
+    setProblemsStatus(`Loaded "${prettifyName(folderName)}"`, "pass");
   } catch (err) {
-    setGhStatus("Failed to load: " + err.message, "fail");
+    setProblemsStatus("Failed to load problem: " + err.message, "fail");
   } finally {
-    loadBtn.disabled = false;
+    allBtns.forEach((b) => { b.disabled = false; });
   }
 }
 
-document.getElementById("gh-load").addEventListener("click", loadFromGithub);
 document.getElementById("run").addEventListener("click", runTests);
 
-// Warm up the runtime + pytest install in the background on page load
+// Warm up the runtime + pytest install, and load the problem list,
+// in the background on page load.
 (async () => {
   try {
     const pyodide = await getPyodide();
@@ -366,6 +491,8 @@ document.getElementById("run").addEventListener("click", runTests);
     setStatus("Failed to load Python runtime: " + err, "fail");
   }
 })();
+
+loadProblemList();
 </script>
 </body>
 </html>
