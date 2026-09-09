@@ -264,6 +264,7 @@ async function runTests() {
     // Write the user's source and test files into Pyodide's virtual filesystem,
     // using the actual source module name so `from <name> import ...` in the
     // test file resolves correctly.
+    // Seems to work better if we just use mymodule.py always as the name.  Will debug later.
     pyodide.FS.writeFile(`/home/pyodide/${sourceModuleName}.py`, sourceCode);
     pyodide.FS.writeFile("/home/pyodide/test_module.py", testCode);
     const runner = `
@@ -306,6 +307,7 @@ function setProblemsStatus(text, kind) {
 // Handles headers, fenced code blocks, inline code, bold/italic,
 // paragraphs and simple bullet lists. Good enough for problem
 // descriptions without pulling in a full markdown library.
+// Note, may want to swap out for a more powerful library at some point.
 function renderMarkdown(md) {
   const escapeHtml = (s) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
