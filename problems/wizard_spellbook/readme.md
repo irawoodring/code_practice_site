@@ -1,4 +1,4 @@
-# 🧙 The Wizard's Spellbook
+# The Wizard's Spellbook
 
 A young wizard is learning magic, but there's a problem: their spellbook contains spells with **too many vowels**!
 
