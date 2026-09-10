@@ -20,7 +20,7 @@ For example:
 
 ```text
 [3, 7, 2, 9, 4]
-       ↑
+          ↑
 ```
 
 The largest number is `9`, and it is at index `3`.
