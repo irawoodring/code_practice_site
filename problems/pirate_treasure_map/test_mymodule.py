@@ -1,4 +1,4 @@
-from treasure_map import treasure_location
+from mymodule import treasure_location
 
 
 def test_largest_in_middle():
