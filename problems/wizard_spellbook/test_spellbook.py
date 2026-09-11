@@ -1,4 +1,4 @@
-from spellbook import spell_power
+from mymodule import spell_power
 
 
 def test_simple_word():
