@@ -1,4 +1,4 @@
-from alien_message import decode_message
+from mymodule import decode_message
 
 
 def test_simple_word():
