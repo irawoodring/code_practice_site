@@ -1,4 +1,4 @@
-from combo_master import longest_combo
+from mymodule import longest_combo
 
 
 def test_simple_combo():
