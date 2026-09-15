@@ -1,5 +1,5 @@
 import pytest
-from word_score import word_score
+from mymodule import word_score
 
 
 def test_single_letters():
