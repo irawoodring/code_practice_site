@@ -1,6 +1,6 @@
 import pytest
 
-from softdrink import Softdrink
+from mymodule import Softdrink
 
 
 def test_valid_softdrink():
