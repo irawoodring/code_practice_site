@@ -454,14 +454,18 @@
 
 </div>
 
+<!-- ============================================================
+     Module script: CodeMirror editors + theme switching
+     ============================================================ -->
 <script type="module">
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from "@codemirror/view";
-import { defaultKeymap, indentWithTab } from "https://esm.sh/@codemirror/commands@6.8.1";
+import { defaultKeymap, indentWithTab } from "@codemirror/commands";
 import { defaultHighlightStyle, indentUnit, syntaxHighlighting } from "@codemirror/language";
 import { python } from "@codemirror/lang-python";
 import { oneDark } from "@codemirror/theme-one-dark";
 
+// One compartment instance can be shared by every editor.
 const themeCompartment = new Compartment();
 
 // Light theme: base styling + the default syntax colors
@@ -505,7 +509,9 @@ const makeEditor = (parent, initial, mode = "dark") => new EditorView({
       themeCompartment.of(themes[mode]),
       highlightActiveLine(),
       drawSelection(),
+      indentUnit.of("    "),
       keymap.of([
+        // Custom binding goes first so defaultKeymap's Mod-Enter doesn't swallow it.
         { key: "Mod-Enter", run: () => { document.getElementById("run").click(); return true; } },
         indentWithTab,
         ...defaultKeymap,
@@ -519,8 +525,20 @@ const makeEditor = (parent, initial, mode = "dark") => new EditorView({
 const setTheme = (view, mode) =>
   view.dispatch({ effects: themeCompartment.reconfigure(themes[mode]) });
 
-window.sourceEditor = makeEditor(document.getElementById("source-editor"), sourceInitial);
-window.testEditor = makeEditor(document.getElementById("test-editor"), testInitial);
+// Create the editors using the saved theme so they match the page on load.
+let initialMode = "dark";
+try {
+  if (localStorage.getItem("coding-practice-theme") === "light") initialMode = "light";
+} catch (e) { /* storage unavailable; fall back to dark */ }
+
+window.sourceEditor = makeEditor(document.getElementById("source-editor"), sourceInitial, initialMode);
+window.testEditor = makeEditor(document.getElementById("test-editor"), testInitial, initialMode);
+
+// Exposed so the classic script below (the theme toggle) can reach it.
+window.setEditorTheme = (mode) => {
+  setTheme(window.sourceEditor, mode);
+  setTheme(window.testEditor, mode);
+};
 
 function basicPythonFormat(view) {
   const text = view.state.doc.toString()
@@ -532,9 +550,13 @@ function basicPythonFormat(view) {
   });
 }
 
-document.getElementById("source-format").addEventListener("click", () => basicPythonFormat(sourceEditor));
-document.getElementById("test-format").addEventListener("click", () => basicPythonFormat(testEditor));
+document.getElementById("source-format").addEventListener("click", () => basicPythonFormat(window.sourceEditor));
+document.getElementById("test-format").addEventListener("click", () => basicPythonFormat(window.testEditor));
 </script>
+
+<!-- ============================================================
+     Classic script: theme toggle, Pyodide, problem loading
+     ============================================================ -->
 <script>
 // ---- Repo configuration ----
 const GITHUB_REPO = "irawoodring/code_practice_site";
@@ -542,7 +564,7 @@ const GITHUB_BRANCH = "main";
 const PROBLEMS_PATH = "problems";
 
 let pyodideReadyPromise = null;
-let pytestInstalled = false;
+let pytestPromise = null;
 let sourceModuleName = "mymodule";
 
 
@@ -551,35 +573,33 @@ let sourceModuleName = "mymodule";
 const themeToggle = document.getElementById("theme-toggle");
 
 function updateThemeButton() {
-  if (document.body.classList.contains("light-mode")) {
-    themeToggle.textContent = "🌙 Dark Mode";
-  } else {
-    themeToggle.textContent = "☀️ Light Mode";
-  }
+  themeToggle.textContent = document.body.classList.contains("light-mode")
+    ? "🌙 Dark Mode"
+    : "☀️ Light Mode";
 }
 
 themeToggle.addEventListener("click", () => {
-  document.body.classList.toggle("light-mode");
+  // classList.toggle returns true if the class is now present
+  const isLightMode = document.body.classList.toggle("light-mode");
+  const mode = isLightMode ? "light" : "dark";
 
-  const isLightMode =
-    document.body.classList.contains("light-mode");
-  let mode = isLightMode === "dark" ? "light" : "dark";  
-  setTheme(view, mode);
-  localStorage.setItem(
-    "coding-practice-theme",
-    isLightMode ? "light" : "dark"
-  );
+  // Swap the CodeMirror themes (defined in the module script).
+  // Optional call so the page toggle still works if the module failed to load.
+  window.setEditorTheme?.(mode);
+
+  try {
+    localStorage.setItem("coding-practice-theme", mode);
+  } catch (e) { /* storage unavailable; ignore */ }
 
   updateThemeButton();
 });
 
-
 // Restore saved theme when the page loads
-const savedTheme = localStorage.getItem("coding-practice-theme");
-
-if (savedTheme === "light") {
-  document.body.classList.add("light-mode");
-}
+try {
+  if (localStorage.getItem("coding-practice-theme") === "light") {
+    document.body.classList.add("light-mode");
+  }
+} catch (e) { /* storage unavailable; ignore */ }
 
 updateThemeButton();
 
@@ -590,33 +610,31 @@ async function getPyodide() {
   if (!pyodideReadyPromise) {
     pyodideReadyPromise = loadPyodide();
   }
-
   return pyodideReadyPromise;
 }
 
 
-async function ensurePytest(pyodide, setStatusFn) {
-  if (pytestInstalled) return;
-
-  setStatusFn("Installing pytest (first run only)…");
-
-  await pyodide.loadPackage("micropip");
-
-  const micropip = pyodide.pyimport("micropip");
-
-  await micropip.install(["pytest"]);
-
-  pytestInstalled = true;
+// Cache the promise (not a boolean) so simultaneous callers share one install.
+function ensurePytest(pyodide, setStatusFn) {
+  if (!pytestPromise) {
+    pytestPromise = (async () => {
+      setStatusFn("Installing pytest (first run only)…");
+      await pyodide.loadPackage("micropip");
+      const micropip = pyodide.pyimport("micropip");
+      await micropip.install(["pytest"]);
+    })().catch((err) => {
+      pytestPromise = null; // allow a retry after a failure
+      throw err;
+    });
+  }
+  return pytestPromise;
 }
 
 
 function setStatus(text, kind) {
   const el = document.getElementById("status");
-
   el.textContent = text;
-
-  el.className =
-    "status" + (kind ? " " + kind : "");
+  el.className = "status" + (kind ? " " + kind : "");
 }
 
 
@@ -624,8 +642,8 @@ async function runTests() {
   const runBtn = document.getElementById("run");
   const outputEl = document.getElementById("output");
 
-  const sourceCode = sourceEditor.state.doc.toString();
-  const testCode = testEditor.state.doc.toString();
+  const sourceCode = window.sourceEditor.state.doc.toString();
+  const testCode = window.testEditor.state.doc.toString();
 
   runBtn.disabled = true;
 
@@ -678,8 +696,7 @@ with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
 buf.getvalue(), int(exit_code)
 `;
 
-    const result =
-      await pyodide.runPythonAsync(runner);
+    const result = await pyodide.runPythonAsync(runner);
 
     const [text, exitCode] = result.toJs();
 
@@ -688,20 +705,13 @@ buf.getvalue(), int(exit_code)
     if (exitCode === 0) {
       setStatus("All tests passed", "pass");
     } else {
-      setStatus(
-        "Tests failed (exit code " + exitCode + ")",
-        "fail"
-      );
+      setStatus("Tests failed (exit code " + exitCode + ")", "fail");
     }
 
   } catch (err) {
 
     outputEl.textContent = String(err);
-
-    setStatus(
-      "Error running tests",
-      "fail"
-    );
+    setStatus("Error running tests", "fail");
 
   } finally {
     runBtn.disabled = false;
@@ -710,13 +720,9 @@ buf.getvalue(), int(exit_code)
 
 
 function setProblemsStatus(text, kind) {
-  const el =
-    document.getElementById("problems-status");
-
+  const el = document.getElementById("problems-status");
   el.textContent = text;
-
-  el.className =
-    "status" + (kind ? " " + kind : "");
+  el.className = "status" + (kind ? " " + kind : "");
 }
 
 
@@ -730,8 +736,7 @@ function renderMarkdown(md) {
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;");
 
-  const lines =
-    md.replace(/\r\n/g, "\n").split("\n");
+  const lines = md.replace(/\r\n/g, "\n").split("\n");
 
   let html = "";
   let inCodeBlock = false;
@@ -746,24 +751,10 @@ function renderMarkdown(md) {
   };
 
   const inlineFormat = (text) => {
-
     let t = escapeHtml(text);
-
-    t = t.replace(
-      /`([^`]+)`/g,
-      "<code>$1</code>"
-    );
-
-    t = t.replace(
-      /\*\*([^*]+)\*\*/g,
-      "<strong>$1</strong>"
-    );
-
-    t = t.replace(
-      /\*([^*]+)\*/g,
-      "<em>$1</em>"
-    );
-
+    t = t.replace(/`([^`]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
     return t;
   };
 
@@ -775,18 +766,11 @@ function renderMarkdown(md) {
     if (line.trim().startsWith("```")) {
 
       if (!inCodeBlock) {
-
         inCodeBlock = true;
         codeBuffer = [];
-
       } else {
-
         inCodeBlock = false;
-
-        html +=
-          `<pre><code>${escapeHtml(
-            codeBuffer.join("\n")
-          )}</code></pre>`;
+        html += `<pre><code>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`;
       }
 
       continue;
@@ -794,63 +778,41 @@ function renderMarkdown(md) {
 
 
     if (inCodeBlock) {
-
       codeBuffer.push(line);
-
       continue;
     }
 
 
-    const headerMatch =
-      line.match(/^(#{1,3})\s+(.*)$/);
+    const headerMatch = line.match(/^(#{1,3})\s+(.*)$/);
 
     if (headerMatch) {
-
       closeList();
-
-      const level =
-        headerMatch[1].length;
-
-      html +=
-        `<h${level}>${inlineFormat(
-          headerMatch[2]
-        )}</h${level}>`;
-
+      const level = headerMatch[1].length;
+      html += `<h${level}>${inlineFormat(headerMatch[2])}</h${level}>`;
       continue;
     }
 
 
-    const bulletMatch =
-      line.match(/^\s*[-*]\s+(.*)$/);
+    const bulletMatch = line.match(/^\s*[-*]\s+(.*)$/);
 
     if (bulletMatch) {
-
       if (!inList) {
         html += "<ul>";
         inList = true;
       }
-
-      html +=
-        `<li>${inlineFormat(
-          bulletMatch[1]
-        )}</li>`;
-
+      html += `<li>${inlineFormat(bulletMatch[1])}</li>`;
       continue;
     }
 
 
     if (line.trim() === "") {
-
       closeList();
-
       continue;
     }
 
 
     closeList();
-
-    html +=
-      `<p>${inlineFormat(line)}</p>`;
+    html += `<p>${inlineFormat(line)}</p>`;
   }
 
 
@@ -858,11 +820,7 @@ function renderMarkdown(md) {
 
 
   if (inCodeBlock && codeBuffer.length) {
-
-    html +=
-      `<pre><code>${escapeHtml(
-        codeBuffer.join("\n")
-      )}</code></pre>`;
+    html += `<pre><code>${escapeHtml(codeBuffer.join("\n"))}</code></pre>`;
   }
 
 
@@ -877,17 +835,14 @@ async function githubApi(path) {
   const url =
     `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`;
 
-  const res =
-    await fetch(url, {
-      headers: {
-        Accept: "application/vnd.github+json"
-      }
-    });
+  const res = await fetch(url, {
+    headers: {
+      Accept: "application/vnd.github+json"
+    }
+  });
 
   if (!res.ok) {
-    throw new Error(
-      `GitHub API ${res.status} for ${path}`
-    );
+    throw new Error(`GitHub API ${res.status} for ${path}`);
   }
 
   return res.json();
@@ -899,9 +854,7 @@ async function fetchRaw(downloadUrl) {
   const res = await fetch(downloadUrl);
 
   if (!res.ok) {
-    throw new Error(
-      `HTTP ${res.status} fetching ${downloadUrl}`
-    );
+    throw new Error(`HTTP ${res.status} fetching ${downloadUrl}`);
   }
 
   return res.text();
@@ -909,12 +862,9 @@ async function fetchRaw(downloadUrl) {
 
 
 function prettifyName(folderName) {
-
   return folderName
     .replace(/[-_]+/g, " ")
-    .replace(/\b\w/g, (c) =>
-      c.toUpperCase()
-    );
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 
@@ -922,18 +872,13 @@ function prettifyName(folderName) {
 
 async function loadProblemList() {
 
-  const listEl =
-    document.getElementById("problem-list");
+  const listEl = document.getElementById("problem-list");
 
   try {
 
-    const entries =
-      await githubApi(PROBLEMS_PATH);
+    const entries = await githubApi(PROBLEMS_PATH);
 
-    const folders =
-      entries.filter((e) =>
-        e.type === "dir"
-      );
+    const folders = entries.filter((e) => e.type === "dir");
 
 
     if (folders.length === 0) {
@@ -953,26 +898,15 @@ async function loadProblemList() {
 
 
     folders
-      .sort((a, b) =>
-        a.name.localeCompare(b.name)
-      )
+      .sort((a, b) => a.name.localeCompare(b.name))
       .forEach((folder) => {
 
-        const btn =
-          document.createElement("button");
+        const btn = document.createElement("button");
 
         btn.className = "problem-btn";
+        btn.textContent = prettifyName(folder.name);
 
-        btn.textContent =
-          prettifyName(folder.name);
-
-        btn.addEventListener(
-          "click",
-          () => loadProblem(
-            folder.name,
-            btn
-          )
-        );
+        btn.addEventListener("click", () => loadProblem(folder.name, btn));
 
         listEl.appendChild(btn);
       });
@@ -985,23 +919,16 @@ async function loadProblemList() {
     listEl.innerHTML = "";
 
     setProblemsStatus(
-      "Couldn't load problem list: " +
-      err.message,
+      "Couldn't load problem list: " + err.message,
       "fail"
     );
   }
 }
 
 
-async function loadProblem(
-  folderName,
-  clickedBtn
-) {
+async function loadProblem(folderName, clickedBtn) {
 
-  const allBtns =
-    document.querySelectorAll(
-      ".problem-btn"
-    );
+  const allBtns = document.querySelectorAll(".problem-btn");
 
   allBtns.forEach((b) => {
     b.disabled = true;
@@ -1010,23 +937,15 @@ async function loadProblem(
 
   clickedBtn.classList.add("active");
 
-  setProblemsStatus(
-    `Loading "${prettifyName(folderName)}"…`
-  );
+  setProblemsStatus(`Loading "${prettifyName(folderName)}"…`);
 
 
   try {
 
-    const files =
-      await githubApi(
-        `${PROBLEMS_PATH}/${folderName}`
-      );
+    const files = await githubApi(`${PROBLEMS_PATH}/${folderName}`);
 
 
-    const readmeFile =
-      files.find((f) =>
-        /^readme\.md$/i.test(f.name)
-      );
+    const readmeFile = files.find((f) => /^readme\.md$/i.test(f.name));
 
 
     const isTestFile = (name) =>
@@ -1035,126 +954,83 @@ async function loadProblem(
       /_test\.py$/i.test(name);
 
 
-    const testFile =
-      files.find(
-        (f) =>
-          f.type === "file" &&
-          isTestFile(f.name)
-      );
+    const testFile = files.find(
+      (f) => f.type === "file" && isTestFile(f.name)
+    );
 
 
-    const sourceFile =
-      files.find(
-        (f) =>
-          f.type === "file" &&
-          f.name.endsWith(".py") &&
-          !isTestFile(f.name)
-      );
+    const sourceFile = files.find(
+      (f) =>
+        f.type === "file" &&
+        f.name.endsWith(".py") &&
+        !isTestFile(f.name)
+    );
 
 
     if (!testFile || !sourceFile) {
-
       throw new Error(
         "Couldn't find both a source .py file and a test .py file in this problem folder."
       );
     }
 
 
-    const [
-      sourceText,
-      testText,
-      readmeText
-    ] = await Promise.all([
-
-      fetchRaw(
-        sourceFile.download_url
-      ),
-
-      fetchRaw(
-        testFile.download_url
-      ),
-
+    const [sourceText, testText, readmeText] = await Promise.all([
+      fetchRaw(sourceFile.download_url),
+      fetchRaw(testFile.download_url),
       readmeFile
         ? fetchRaw(readmeFile.download_url)
         : Promise.resolve(null)
-
     ]);
 
 
-    sourceEditor.dispatch({
+    window.sourceEditor.dispatch({
       changes: {
         from: 0,
-        to: sourceEditor.state.doc.length,
+        to: window.sourceEditor.state.doc.length,
         insert: sourceText
       }
     });
 
 
-    testEditor.dispatch({
+    window.testEditor.dispatch({
       changes: {
         from: 0,
-        to: testEditor.state.doc.length,
+        to: window.testEditor.state.doc.length,
         insert: testText
       }
     });
 
 
-    document.getElementById(
-      "source-filename"
-    ).textContent = sourceFile.name;
+    document.getElementById("source-filename").textContent = sourceFile.name;
+    document.getElementById("test-filename").textContent = testFile.name;
 
 
-    document.getElementById(
-      "test-filename"
-    ).textContent = testFile.name;
+    sourceModuleName = sourceFile.name.replace(/\.py$/i, "");
 
 
-    sourceModuleName =
-      sourceFile.name.replace(
-        /\.py$/i,
-        ""
-      );
-
-
-    const readmePanel =
-      document.getElementById(
-        "readme-panel"
-      );
+    const readmePanel = document.getElementById("readme-panel");
 
 
     if (readmeText) {
 
-      document.getElementById(
-        "readme-title"
-      ).textContent =
+      document.getElementById("readme-title").textContent =
         prettifyName(folderName);
 
-
-      document.getElementById(
-        "readme-content"
-      ).innerHTML =
+      document.getElementById("readme-content").innerHTML =
         renderMarkdown(readmeText);
 
-
-      readmePanel.style.display =
-        "block";
+      readmePanel.style.display = "block";
 
     } else {
 
-      readmePanel.style.display =
-        "none";
+      readmePanel.style.display = "none";
     }
 
 
     // Clear previous test output.
-    const outputEl =
-      document.getElementById(
-        "output"
-      );
+    const outputEl = document.getElementById("output");
 
-    outputEl.textContent =
-      "Test output will appear here.";
-
+    outputEl.textContent = "Test output will appear here.";
     outputEl.classList.add("empty");
 
     setStatus("Ready");
@@ -1168,8 +1044,7 @@ async function loadProblem(
   } catch (err) {
 
     setProblemsStatus(
-      "Failed to load problem: " +
-      err.message,
+      "Failed to load problem: " + err.message,
       "fail"
     );
 
@@ -1185,12 +1060,7 @@ async function loadProblem(
 
 // ---- Event listeners ----
 
-document
-  .getElementById("run")
-  .addEventListener(
-    "click",
-    runTests
-  );
+document.getElementById("run").addEventListener("click", runTests);
 
 
 // ---- Warm up runtime and load problems ----
@@ -1199,23 +1069,15 @@ document
 
   try {
 
-    const pyodide =
-      await getPyodide();
+    const pyodide = await getPyodide();
 
-    await ensurePytest(
-      pyodide,
-      setStatus
-    );
+    await ensurePytest(pyodide, setStatus);
 
     setStatus("Ready");
 
   } catch (err) {
 
-    setStatus(
-      "Failed to load Python runtime: " +
-      err,
-      "fail"
-    );
+    setStatus("Failed to load Python runtime: " + err, "fail");
   }
 
 })();
@@ -1226,4 +1088,3 @@ loadProblemList();
 
 </body>
 </html>
-
