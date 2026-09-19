@@ -503,7 +503,6 @@ const makeEditor = (parent, initial, mode = "dark") => new EditorView({
       lineNumbers(),
       python(),
       themeCompartment.of(themes[mode]),
-      editorTheme,               // see note below
       highlightActiveLine(),
       drawSelection(),
       keymap.of([
