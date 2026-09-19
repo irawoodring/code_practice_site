@@ -1,0 +1,44 @@
+[
+  {
+    "id": "alien_message_decoder",
+    "source": "mymodule.py",
+    "test": "test_module.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "combo_master",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "count_votes",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "pirate_treasure_map",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "softdrink_class",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "wizard_spellbook",
+    "source": "mymodule.py",
+    "test": "test_spellbook.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "word_score",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  }
+]
