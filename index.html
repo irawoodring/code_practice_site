@@ -372,7 +372,7 @@
       </p>
 
       <p class="sub">
-        This means that anything you have here will not be saved if you leave
+      This means that anything you have here <b>will not be saved</b> if you leave
         this page. If you want to code and come back later, you will need to
         leave the page up.
       </p>
@@ -481,13 +481,25 @@ const lightTheme = [
 
 const themes = { dark: oneDark, light: lightTheme };
 
-const sourceInitial = `def add(a, b):
+const sourceInitial = `
+# Your code will go here
+def add(a, b):
     return a + b
 
 def divide(a, b):
     return a / b`;
 
-const testInitial = `from mymodule import add, divide
+const testInitial = `
+# This area is for code that tests
+# whether your code functions correctly.
+#
+# You should look closely at the tests
+# to ensure your code is doing what is
+# expected.  Tests are helpful because
+# they are less contextual than human
+# language.
+
+from mymodule import add, divide
 import pytest
 
 def test_add():
