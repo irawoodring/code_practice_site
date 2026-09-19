@@ -563,7 +563,7 @@ themeToggle.addEventListener("click", () => {
 
   const isLightMode =
     document.body.classList.contains("light-mode");
-  mode = mode === "dark" ? "light" : "dark";  
+  let mode = isLightMode === "dark" ? "light" : "dark";  
   setTheme(view, mode);
   localStorage.setItem(
     "coding-practice-theme",
