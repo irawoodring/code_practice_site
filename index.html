@@ -410,7 +410,7 @@
     <div class="panel">
       <div class="panel-head">
         <span>
-          Source — <code id="source-filename">mymodule.py</code>
+          Source (code in here!)— <code id="source-filename">mymodule.py</code>
         </span>
       </div>
 
@@ -424,7 +424,7 @@
     <div class="panel">
       <div class="panel-head">
         <span>
-          Tests — <code id="test-filename">test_module.py</code>
+          Tests (these check your code) — <code id="test-filename">test_module.py</code>
         </span>
       </div>
 
@@ -481,13 +481,18 @@ const lightTheme = [
 
 const themes = { dark: oneDark, light: lightTheme };
 
-const sourceInitial = `def add(a, b):
+const sourceInitial = `# Code in this panel. Then,
+# run the tests with the button below.
+def add(a, b):
     return a + b
 
 def divide(a, b):
     return a / b`;
 
-const testInitial = `from mymodule import add, divide
+const testInitial = `# Tests will check your code
+# for correctness.  Inspect the tests to
+# determine exactly how your code should work.
+from mymodule import add, divide
 import pytest
 
 def test_add():
