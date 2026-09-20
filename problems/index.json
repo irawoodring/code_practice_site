@@ -24,6 +24,12 @@
     "readme": "readme.md"
   },
   {
+    "id": "pet_class",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "pirate_treasure_map",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
