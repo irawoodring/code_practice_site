@@ -6,6 +6,24 @@
     "readme": "readme.md"
   },
   {
+    "id": "class-Movie",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-Pet",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-Softdrink",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "combo_master",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -18,25 +36,13 @@
     "readme": "readme.md"
   },
   {
-    "id": "movie_class",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
-    "id": "pet_class",
+    "id": "pirate_radio_decoder",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
   },
   {
     "id": "pirate_treasure_map",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
-    "id": "softdrink_class",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
