@@ -6,6 +6,12 @@
     "readme": "readme.md"
   },
   {
+    "id": "class-BankAccount",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "class-Movie",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -13,6 +19,12 @@
   },
   {
     "id": "class-Pet",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-Rectangle",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -36,6 +48,24 @@
     "readme": "readme.md"
   },
   {
+    "id": "dragon_hoard",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "grade_book",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "palindrome_detective",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "pirate_radio_decoder",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -43,6 +73,24 @@
   },
   {
     "id": "pirate_treasure_map",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "robot_path",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "rock_paper_scissors",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "secret_agent_cipher",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
