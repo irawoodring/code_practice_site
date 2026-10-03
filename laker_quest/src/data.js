@@ -133,21 +133,25 @@ LQ.ENEMIES = {
   },
 };
 
-// Where enemies wander on campus: {type, rect in tiles, count}.
+// Where enemies wander on campus: {type, img: [x0, y0, x1, y1] in campus map
+// image pixels (see campus.js), count}.
 LQ.SPAWNS = [
-  { type: 'squirrel', x: 64, y: 10, w: 60, h: 34, count: 7 },
-  { type: 'squirrel', x: 0, y: 10, w: 19, h: 32, count: 2 },
-  { type: 'goose', x: 80, y: 78, w: 20, h: 16, count: 4 },
-  { type: 'goose', x: 120, y: 60, w: 16, h: 50, count: 3 },
-  { type: 'scooter', x: 56, y: 60, w: 10, h: 80, count: 3 },
-  { type: 'scooter', x: 82, y: 62, w: 40, h: 16, count: 2 },
-  { type: 'book', x: 60, y: 80, w: 50, h: 24, count: 3 },
-  { type: 'sophomore', x: 60, y: 100, w: 50, h: 36, count: 5 },
-  { type: 'drone', x: 38, y: 108, w: 22, h: 26, count: 3 },
-  { type: 'drone', x: 38, y: 10, w: 20, h: 10, count: 2 },
-  { type: 'cloud', x: 112, y: 76, w: 24, h: 64, count: 4 },
-  { type: 'mascot', x: 36, y: 40, w: 22, h: 34, count: 3 },
-  { type: 'squirrel', x: 24, y: 84, w: 24, h: 26, count: 3 },
+  { type: 'squirrel', img: [415, 85, 535, 230], count: 8 },
+  { type: 'squirrel', img: [416, 292, 482, 334], count: 3 },
+  { type: 'squirrel', img: [330, 80, 410, 140], count: 2 },
+  { type: 'goose', img: [390, 335, 432, 372], count: 4 },
+  { type: 'goose', img: [400, 360, 470, 410], count: 3 },
+  { type: 'scooter', img: [330, 150, 410, 330], count: 3 },
+  { type: 'scooter', img: [330, 380, 420, 470], count: 2 },
+  { type: 'book', img: [340, 300, 430, 400], count: 3 },
+  { type: 'sophomore', img: [255, 420, 350, 512], count: 4 },
+  { type: 'sophomore', img: [365, 420, 475, 600], count: 4 },
+  { type: 'drone', img: [255, 330, 340, 430], count: 3 },
+  { type: 'drone', img: [430, 66, 538, 110], count: 2 },
+  { type: 'cloud', img: [470, 225, 536, 300], count: 3 },
+  { type: 'cloud', img: [500, 300, 538, 500], count: 2 },
+  { type: 'mascot', img: [222, 100, 330, 270], count: 3 },
+  { type: 'mascot', img: [150, 340, 262, 420], count: 2 },
 ];
 
 // ------------------------------------------------------------ people
@@ -177,7 +181,7 @@ LQ.LOOKS = {
 // Lines starting with '@' are speaker-less narration.
 LQ.NPCS = [
   // ---------- campus: north housing
-  { id: 'ra', map: 'campus', x: 87, y: 20, look: 'ra', dir: 'down', name: 'RA Jordan',
+  { id: 'ra', map: 'campus', img: [478, 146], look: 'ra', dir: 'down', name: 'RA Jordan',
     talk: (g) => {
       if (!g.flags.talkedRA) {
         g.flags.talkedRA = true;
@@ -186,43 +190,41 @@ LQ.NPCS = [
           'Last night at midnight the Cook Carillon rang THIRTEEN times. Out of tune, too.',
           'Ever since, campus has been... off. Squirrels picking fights. The geese are worse than usual. Which I didn\'t think was possible.',
           'Dr. Vanderwal from the physics department was asking for "a brave student" over at the Kirkhof Center.',
-          'Kirkhof is south. Follow North Campus Drive down, then it bends west to Campus Drive. Kirkhof is next to the library.',
+          'Kirkhof is southwest of here, in the middle of campus. Take North Campus Drive south. Kirkhof sits right next to the library, by the Cook Carillon.',
           '@(Press M to see the campus map.)',
         ];
       }
       if (g.flags.bossBeaten) return ['You fixed the bells?! I\'m putting this in the floor newsletter.'];
-      return ['Kirkhof Center is south, next to the library. Be careful out there!', 'If you get hurt, Kleiner Commons has food. Just south of here.'];
+      return ['Kirkhof Center is southwest, in the middle of campus, next to the library. Be careful out there!', 'If you get hurt, Kleiner Commons has food. It\'s just southwest of here.'];
     } },
-  { id: 'st1', map: 'campus', x: 90, y: 32, look: 'student1', dir: 'left', wander: true,
-    talk: () => ['I heard the Fieldhouse coach is giving away gear to anybody brave enough to go outside.', 'The Fieldhouse is out west, by Stadium Drive.'] },
-  { id: 'guide', map: 'campus', x: 72, y: 18, look: 'guide', dir: 'down', name: 'Tour Guide',
+  { id: 'st1', map: 'campus', img: [440, 158], look: 'student1', dir: 'left', wander: true,
+    talk: () => ['I heard the Fieldhouse coach is giving away gear to anybody brave enough to go outside.', 'The Fieldhouse is west of North Campus Drive, across from the D lots. Big building, you can\'t miss it.'] },
+  { id: 'guide', map: 'campus', img: [350, 118], look: 'guide', dir: 'down', name: 'Tour Guide',
     talk: () => [
       'Welcome to Grand Valley! Let me orient you.',
-      'Lake Michigan Drive, M-45, runs along the north side of campus. You\'re near it now.',
-      'The Grand River is to the east, past the ravines. Athletics are to the west, by the golf course.',
-      'Academic buildings are in the middle. Housing is at the north and south ends.',
-      'And the Cook Carillon Tower is right in the center, by the library and Zumberge Pond. You can\'t miss it.',
+      'You\'re at the north entrance. Lake Michigan Drive, M-45, runs along the north edge of campus.',
+      'The Grand River is to the east, past the ravines and the boathouse. Athletics are to the west: Lubbers Stadium, Kelly Family Sports Center, the Fieldhouse. The Meadows golf course is past the stadium.',
+      'Academic buildings are in the middle. Housing is at the north end, here, and the south end: Laker Village, Niemeyer, the South Apartments and GVA down by Pierce Street.',
+      'And the Cook Carillon Tower is right in the center, just north of Kirkhof, between the library and Cook-DeWitt.',
     ] },
   // ---------- athletics
-  { id: 'jock', map: 'campus', x: 58, y: 56, look: 'student4', dir: 'left', wander: true,
+  { id: 'jock', map: 'campus', img: [262, 150], look: 'student4', dir: 'left', wander: true,
     talk: () => ['The stadium is haunted now. Well, haunted-ish. Our mascot costume is walking around WITHOUT anybody in it.', 'Anchor Up, I guess?'] },
-  { id: 'golfer', map: 'campus', x: 33, y: 30, look: 'student2', dir: 'down',
+  { id: 'golfer', map: 'campus', img: [195, 200], look: 'student2', dir: 'down',
     talk: () => ['Fore! ...Oh, sorry. I thought you were a squirrel.', 'They keep stealing my golf balls. I think they\'re organized.'] },
   // ---------- core
-  { id: 'bridgekid', map: 'campus', x: 97, y: 62, look: 'student3', dir: 'up', wander: true,
-    talk: () => ['That\'s the Little Mac Bridge. It crosses the ravine between Henry Hall and Great Lakes Plaza.', 'It\'s the quickest way between north and south campus on foot.'] },
-  { id: 'grounds', map: 'campus', x: 82, y: 91, look: 'groundskeeper', dir: 'right', name: 'Groundskeeper',
+  { id: 'bridgekid', map: 'campus', img: [414, 280], look: 'student3', dir: 'up', wander: true,
+    talk: () => ['That\'s the Little Mac Bridge. It crosses the ravine from the Padnos side over to the Arboretum.', 'Keep going south past Au Sable Hall and you hit Great Lakes Plaza.'] },
+  { id: 'grounds', map: 'campus', img: [398, 364], look: 'groundskeeper', dir: 'right', name: 'Groundskeeper',
     talk: (g) => g.flags.bossBeaten
       ? ['The geese have calmed down. Relatively speaking.']
       : ['Don\'t go near the pond unless you\'re ready to scrap with a goose.', 'They hatched here. They think they own the place. Honestly? They might.'] },
-  { id: 'st2', map: 'campus', x: 70, y: 99, look: 'student2', dir: 'down', wander: true,
+  { id: 'st2', map: 'campus', img: [372, 374], look: 'student2', dir: 'down', wander: true,
     talk: () => ['I had a book in my backpack and it just... flew away. Toward the library. It was overdue, I guess.'] },
-  { id: 'st3', map: 'campus', x: 92, y: 112, look: 'student1', dir: 'down', wander: true,
+  { id: 'st3', map: 'campus', img: [420, 470], look: 'student1', dir: 'down', wander: true,
     talk: () => ['Everybody in south campus housing is up all night. The bells keep ringing at random times.', 'Some of the sophomores have gone feral.'] },
-  { id: 'fisher', map: 'campus', x: 134, y: 100, look: 'groundskeeper', dir: 'right',
-    talk: () => ['The Grand River. Flows all the way from Jackson down to Grand Haven and into Lake Michigan.', 'Lately it\'s been snowing on just this one spot. In September.'] },
-  { id: 'kid', map: 'campus', x: 9, y: 26, look: 'kid', dir: 'down', wander: true,
-    talk: () => ['This is Allendale! My big sister goes to Grand Valley.', 'She says college is mostly walking in the wind.'] },
+  { id: 'fisher', map: 'campus', img: [560, 114], look: 'groundskeeper', dir: 'right',
+    talk: () => ['The Grand River. Flows all the way from Jackson down to Grand Haven and into Lake Michigan.', 'The ravines on campus all drain down here. Lately it\'s been snowing on just this one spot. In September.'] },
   // ---------- interiors
   { id: 'roommate', map: 'frey', x: 8, y: 4, look: 'roommate', dir: 'down', name: 'Roommate',
     talk: (g) => g.flags.talkedRA
@@ -238,15 +240,15 @@ LQ.NPCS = [
           'Listen. The Cook Carillon has 48 bronze bells. Last night they began ringing a melody that should not exist.',
           'Something has taken root in that tower. It is broadcasting discord across campus. Hence the geese.',
           'To set it right, you need two things.',
-          'First, the original Carillon Score. The library keeps it in special collections. Ask at the Mary Idema Pew Library, right next door.',
-          'Second, the Tower Key. That\'s held by the office in Zumberge Hall, east of the pond.',
+          'First, the original Carillon Score. The library keeps it in special collections. Ask at the Mary Idema Pew Library, right next door to the west.',
+          'Second, the Tower Key. That\'s held by the office in Zumberge Hall, just east of here across Zumberge Pond.',
           'Get both, climb the tower, and play the true melody. It should... "re-tune" whatever is in there.',
           'Good luck. I would go myself, but I have office hours.',
         ];
       }
-      if (!g.has('score')) return ['The library is right next door to the north. Ask about the Carillon Score.'];
-      if (!g.has('key')) return ['You have the score! Now the Tower Key. Zumberge Hall, east of the pond.'];
-      return ['You have both! The tower is just east of the library, by the pond. When you face it... use the score.'];
+      if (!g.has('score')) return ['The library is right next door, to the west. Ask about the Carillon Score.'];
+      if (!g.has('key')) return ['You have the score! Now the Tower Key. Zumberge Hall, east across the pond.'];
+      return ['You have both! The tower is just north of Kirkhof, between the library and Cook-DeWitt. When you face it... use the score.'];
     } },
   { id: 'barista', map: 'kirkhof', x: 15, y: 3, look: 'barista', dir: 'down', name: 'Barista',
     talk: (g) => { g.offerInn('A large latte is $8. It fully restores HP and PP. Want one?', 8); return null; } },
@@ -299,14 +301,12 @@ LQ.NPCS = [
   { id: 'cook', map: 'kleiner', x: 8, y: 3, look: 'cook', dir: 'down', name: 'Dining Staff',
     talk: (g) => { g.fullHeal(); return ['You look hungry! Here, have a plate. On the house.', '@' + g.player.name + '\'s HP and PP were fully restored!']; } },
   { id: 'kleinerst', map: 'kleiner', x: 4, y: 7, look: 'student1', dir: 'right', wander: true,
-    talk: () => ['Kleiner\'s the dining spot for north campus. The south end has its own places.'] },
+    talk: () => ['Kleiner\'s the dining spot for north campus. Down south there\'s the Blue Connection.'] },
   { id: 'alumni', map: 'alumni', x: 6, y: 4, look: 'guide', dir: 'down', name: 'Visitor Center',
     talk: (g) => {
       if (!g.flags.gotCookies) { g.flags.gotCookies = true; g.giveItem('cookie'); g.giveItem('cookie'); return ['Welcome to the Alumni House and Visitor Center! Have some cookies.', '@' + g.player.name + ' received 2 Cookies!']; }
       return ['Fun fact: Grand Valley was founded in 1960. The first classes were held in 1963.'];
     } },
-  { id: 'dinercook', map: 'diner', x: 8, y: 3, look: 'cook', dir: 'down', name: 'Diner Cook',
-    talk: (g) => { g.openShop('Welcome to the Corner Diner! What\'ll it be?', ['cookie', 'apple', 'pizza', 'sub', 'coffee']); return null; } },
 ];
 
 // ------------------------------------------------------------ interiors
@@ -329,6 +329,4 @@ LQ.INTERIORS = {
     furniture: [{ type: 'desk', x: 2, y: 2, w: 2, h: 1 }, { type: 'desk', x: 10, y: 2, w: 2, h: 1 }, { type: 'table', x: 4, y: 6, w: 6, h: 1 }, { type: 'machine', x: 12, y: 6, w: 1, h: 1 }] },
   alumni: { id: 'alumni', name: 'Alumni House & Visitor Center', w: 12, h: 9, floor: 'wood', phone: { x: 10, y: 3 },
     furniture: [{ type: 'counter', x: 4, y: 2, w: 4, h: 1 }, { type: 'plant', x: 1, y: 2, w: 1, h: 1 }, { type: 'table', x: 2, y: 5, w: 2, h: 1 }] },
-  diner: { id: 'diner', name: 'Allendale Corner Diner', w: 14, h: 9, floor: 'tile', phone: { x: 12, y: 3 },
-    furniture: [{ type: 'counter', x: 4, y: 2, w: 7, h: 1 }, { type: 'table', x: 2, y: 5, w: 2, h: 1 }, { type: 'table', x: 9, y: 5, w: 2, h: 1 }] },
 };

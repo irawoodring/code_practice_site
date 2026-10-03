@@ -50,151 +50,157 @@ LQ.GameMap = class {
         if (this.isSolid(x, y)) return true;
     return false;
   }
-  buildingAt(x, y) {
-    return this.buildings ? this.buildings.find((b) => x >= b.x && x < b.x + b.w && y >= b.y && y < b.y + b.h) : null;
+  buildingAt() { return null; }
+  // Nearest tile you can stand on (optionally not a road), searching outward.
+  snapOpen(tx, ty, avoidRoad) {
+    const ok = (x, y) => {
+      if (this.isSolid(x, y) || this.isSolid(x, y - 1)) return false;
+      const t = this.get(x, y);
+      if (t === T.DOOR || t === T.EXIT || t === T.BRIDGE) return false;
+      return !(avoidRoad && (t === T.ROAD || t === T.PARKING));
+    };
+    for (let r = 0; r < 20; r++)
+      for (let dy = -r; dy <= r; dy++)
+        for (let dx = -r; dx <= r; dx++)
+          if (Math.max(Math.abs(dx), Math.abs(dy)) === r && ok(tx + dx, ty + dy)) return [tx + dx, ty + dy];
+    return [tx, ty];
+  }
+  // Ground is drawn in 32x32-tile chunks, rendered on demand and cached.
+  chunk(cx, cy) {
+    if (!this.chunks) this.chunks = new Map();
+    const key = cx + ',' + cy;
+    let c = this.chunks.get(key);
+    if (c) { this.chunks.delete(key); this.chunks.set(key, c); return c; }
+    c = document.createElement('canvas');
+    c.width = c.height = 512;
+    const ctx = c.getContext('2d');
+    for (let y = 0; y < 32; y++)
+      for (let x = 0; x < 32; x++) {
+        const tx = cx * 32 + x, ty = cy * 32 + y;
+        if (this.inside(tx, ty)) LQ.drawTile(ctx, this.get(tx, ty), tx, ty, x * 16, y * 16, this);
+      }
+    this.chunks.set(key, c);
+    if (this.chunks.size > 30) this.chunks.delete(this.chunks.keys().next().value);
+    return c;
+  }
+  drawGround(ctx, camX, camY, vw, vh) {
+    for (let cy = Math.floor(camY / 512); cy <= Math.floor((camY + vh - 1) / 512); cy++)
+      for (let cx = Math.floor(camX / 512); cx <= Math.floor((camX + vw - 1) / 512); cx++)
+        if (cx >= 0 && cy >= 0 && cx * 32 < this.w && cy * 32 < this.h) ctx.drawImage(this.chunk(cx, cy), cx * 512 - camX, cy * 512 - camY);
   }
 };
 
 // ------------------------------------------------------------ campus build
+// Terrain char from the traced map -> tile type.
+LQ.MAP_CHARS = {
+  '.': T.GRASS, B: T.BUILDING, K: T.BUILDING, R: T.ROAD, W: T.PATH,
+  r: T.PARKING, b: T.PARKING, y: T.PARKING, g: T.PARKING, u: T.PARKING, o: T.PARKING, k: T.PARKING,
+  F: T.TURF, '~': T.WATER, G: T.FAIRWAY, A: T.FARM, T: T.GRASS, V: T.RAVINE, '=': T.BRIDGE, t: T.GRASS, D: T.DIRT,
+};
+// Parking lot colors match the campus map's permit colors.
+LQ.LOT_COLORS = { r: '#d84850', b: '#3878d0', y: '#e0b828', g: '#40b060', u: '#7050b0', o: '#e88030', k: '#282830' };
+
 LQ.buildCampus = function () {
-  const C = LQ.CAMPUS;
-  const m = new LQ.GameMap('campus', C.width, C.height, T.GRASS);
+  const D = LQ.CAMPUS_MAP, C = LQ.CAMPUS;
+  const m = new LQ.GameMap('campus', D.width, D.height, T.GRASS);
   m.name = 'GVSU Allendale';
-  m.buildings = C.buildings;
-  const inRect = (r, x, y) => x >= r.x && x < r.x + r.w && y >= r.y && y < r.y + r.h;
-
-  // Fields and farmland first; everything else paints over them.
-  for (const f of C.fields) {
-    const t = f.kind === 'turf' ? T.TURF : f.kind === 'fairway' ? T.FAIRWAY : T.FARM;
-    m.fill(f, t);
-  }
-  // A few sand traps on the golf course.
-  [[27, 22], [30, 40], [26, 58], [29, 70]].forEach(([x, y]) => m.fill({ x, y, w: 3, h: 2 }, T.SAND));
-
-  // River with a gentle wobble.
-  for (let y = 0; y < C.height; y++) {
-    const wob = Math.round(Math.sin(y / 9) * 1.5 + Math.sin(y / 23) * 1.2);
-    for (let x = C.river.x + wob; x < C.river.x + wob + C.river.w; x++) m.set(x, y, T.WATER);
-  }
-
-  // Ravines (impassable steep woods) with ragged edges.
-  for (const r of C.ravines) {
-    for (let y = r.y; y < r.y + r.h; y++) {
-      for (let x = r.x; x < r.x + r.w; x++) {
-        if (m.get(x, y) === T.WATER) continue;
-        const edge = (y === r.y || y === r.y + r.h - 1) && LQ.hash(x, y, 7) < 0.4;
-        if (r.sparse) {
-          if (LQ.hash(x, y, 11) < 0.33) m.set(x, y, T.RAVINE);
-        } else if (!edge) {
-          m.set(x, y, T.RAVINE);
-        }
-      }
-    }
-  }
-
-  // Pond (ellipse).
-  const p = C.pond;
-  for (let y = p.cy - p.ry; y <= p.cy + p.ry; y++)
-    for (let x = p.cx - p.rx; x <= p.cx + p.rx; x++) {
-      const d = ((x - p.cx) / p.rx) ** 2 + ((y - p.cy) / p.ry) ** 2;
-      if (d < 1) m.set(x, y, T.WATER);
-    }
-
-  for (const pl of C.plazas) m.fill(pl, T.BRICK, (t) => t === T.GRASS);
-  for (const pk of C.parking) m.fill(pk, T.PARKING);
-
-  // Roads. Count overlaps so intersections don't get center lines.
-  const roadCount = new Uint8Array(m.w * m.h);
-  for (const r of C.roads) {
-    const horiz = r.w > r.h;
-    for (let y = r.y; y < r.y + r.h; y++)
-      for (let x = r.x; x < r.x + r.w; x++) {
-        if (!m.inside(x, y)) continue;
-        const i = y * m.w + x;
-        roadCount[i]++;
-        let t = T.ROAD;
-        if (horiz && y === r.y + Math.floor(r.h / 2) - 1) t = T.ROAD_LINE_H;
-        if (!horiz && x === r.x + Math.floor(r.w / 2) - 1) t = T.ROAD_LINE_V;
-        m.tiles[i] = roadCount[i] > 1 ? T.ROAD : t;
-      }
-  }
-
-  // Sidewalks along roads wherever there's grass.
+  m.terrain = D.rows;
+  m.lotColor = new Map();
   for (let y = 0; y < m.h; y++)
     for (let x = 0; x < m.w; x++) {
-      if (m.get(x, y) !== T.GRASS) continue;
-      const nearRoad = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
-        const t = m.get(x + dx, y + dy);
-        return t === T.ROAD || t === T.ROAD_LINE_H || t === T.ROAD_LINE_V;
+      const ch = D.rows[y][x];
+      m.tiles[y * m.w + x] = LQ.MAP_CHARS[ch] !== undefined ? LQ.MAP_CHARS[ch] : T.GRASS;
+      if (LQ.LOT_COLORS[ch]) m.lotColor.set(y * m.w + x, LQ.LOT_COLORS[ch]);
+    }
+
+  // Buildings with their traced shapes.
+  const walkable = (t) => !LQ.SOLID.has(t) && t !== T.DOOR;
+  m.buildings = [];
+  for (const src of D.buildings) {
+    const w = src.mask[0].length, h = src.mask.length;
+    const has = (x, y) => y >= 0 && y < h && x >= 0 && x < w && src.mask[y][x] === '#';
+    const interior = C.interiors[src.id] || null;
+    const style = C.styles[src.id] || 'brick';
+    // Door: a south-facing edge near the middle, preferring sidewalks.
+    let door = null, best = 1e9;
+    for (let y = 0; y < h; y++)
+      for (let x = 0; x < w; x++) {
+        if (!has(x, y) || has(x, y + 1)) continue;
+        const below = m.get(src.x + x, src.y + y + 1);
+        if (!walkable(below)) continue;
+        const score = Math.abs(x + 0.5 - w / 2) + (h - 1 - y) * 1.5 - (below === T.PATH ? 3 : 0);
+        if (score < best) { best = score; door = [src.x + x, src.y + y]; }
+      }
+    const b = { id: src.id, code: src.code, name: src.name, x: src.x, y: src.y, w, h, mask: src.mask, has, style, interior, door };
+    m.buildings.push(b);
+    if (door) {
+      const [dx, dy] = door;
+      m.set(dx, dy, T.DOOR);
+      m.solidOverride.set(dy * m.w + dx, !interior);
+      m.doors.push({ x: dx, y: dy, building: b, interior });
+      for (let yy = dy + 1; yy < dy + 4; yy++) {
+        const t = m.get(dx, yy);
+        if (t !== T.GRASS && t !== T.FAIRWAY) break;
+        m.set(dx, yy, T.PATH);
+      }
+    }
+    // Draw in horizontal slices so characters in courtyards sort correctly.
+    const sprite = LQ.renderBuilding(b);
+    const R = LQ.BUILDING_RISE;
+    for (let k = 0; k * 16 < sprite.height; k++) {
+      const sh = Math.min(16, sprite.height - k * 16);
+      m.objects.push({
+        kind: 'bslice', sprite, sy: k * 16, sh,
+        x: b.x * 16, y: b.y * 16 - R + k * 16, w: sprite.width,
+        sortY: (b.y + Math.min(k, h - 1) + 1) * 16,
       });
-      if (nearRoad && !inRect({ x: 0, y: 140, w: 150, h: 20 }, x, y)) m.set(x, y, T.PATH);
     }
-
-  for (const pa of C.paths)
-    m.fill(pa, pa.dirt ? T.DIRT : T.PATH, (t) => t !== T.WATER);
-  for (const b of C.bridges) m.fill(b, T.BRIDGE);
-
-  // Stadium stands.
-  for (const s of C.stadiumStands) m.fill(s, T.STANDS);
-
-  // Buildings: footprint + door + a path from the door to the nearest walkway.
-  for (const b of C.buildings) {
-    m.fill(b, T.BUILDING);
-    const dx = b.x + (b.door !== undefined ? b.door : Math.floor(b.w / 2));
-    const dy = b.y + b.h - 1;
-    m.set(dx, dy, T.DOOR);
-    m.solidOverride.set(dy * m.w + dx, !b.interior);
-    m.doors.push({ x: dx, y: dy, building: b, interior: b.interior });
-    for (let y = dy + 1; y < dy + 14; y++) {
-      const t = m.get(dx, y);
-      if (t !== T.GRASS && t !== T.FLOWERS && t !== T.FARM) break;
-      m.set(dx, y, T.PATH);
-    }
-    // Flower beds flanking the door.
-    [dx - 2, dx + 2].forEach((fx) => { if (m.get(fx, dy + 1) === T.GRASS) m.set(fx, dy + 1, T.FLOWERS); });
-    m.objects.push({ kind: 'building', b, sortY: (b.y + b.h) * 16, sprite: LQ.renderBuilding(b) });
   }
+  m.buildingAt = function (x, y) {
+    return this.buildings.find((b) => b.has(x - b.x, y - b.y));
+  };
 
-  // Carillon tower.
-  const ca = C.carillon;
+  // Cook Carillon Tower.
+  const [cx0, cy0] = D.carillon;
+  const ca = { name: 'Cook Carillon Tower', x: cx0, y: cy0, w: 2, h: 2 };
   m.fill(ca, T.BUILDING);
   m.carillon = ca;
   m.objects.push({ kind: 'carillon', sortY: (ca.y + ca.h) * 16, sprite: LQ.renderCarillon(), x: ca.x * 16, y: (ca.y + ca.h) * 16 });
 
-  // Signs.
-  for (const s of C.signs) {
-    m.set(s.x, s.y, m.get(s.x, s.y) === T.TREE ? T.GRASS : m.get(s.x, s.y));
-    m.solidOverride.set(s.y * m.w + s.x, true);
+  // Signs, snapped to the nearest open spot off the road.
+  for (const sg of C.signs) {
+    const [tx, ty] = m.snapOpen(...LQ.imgTile(sg.at[0], sg.at[1]), true);
+    const s = { x: tx, y: ty, text: sg.text };
+    m.solidOverride.set(ty * m.w + tx, true);
     m.signs.push(s);
-    m.objects.push({ kind: 'sign', sortY: (s.y + 1) * 16, x: s.x * 16, y: s.y * 16 + 6, sprite: LQ.signSprite || (LQ.signSprite = LQ.makeSignSprite()) });
+    m.objects.push({ kind: 'sign', sortY: (ty + 1) * 16, x: tx * 16, y: ty * 16 + 6, sprite: LQ.signSprite || (LQ.signSprite = LQ.makeSignSprite()) });
   }
+  const signAt = new Set(m.signs.map((s) => s.y * m.w + s.x));
 
-  // Trees: dense in woods, sparse elsewhere, never crowding walkways.
-  const signAt = new Set(C.signs.map((s) => s.y * m.w + s.x));
+  // Trees: thick in the woods and ravine edges, scattered on lawns.
+  const DENSITY = { '.': 0.03, T: 0.55, t: 0.3, G: 0.012 };
   for (let y = 0; y < m.h; y++) {
     m.treeRows[y] = [];
     for (let x = 0; x < m.w; x++) {
-      if (m.get(x, y) !== T.GRASS || signAt.has(y * m.w + x)) continue;
-      const crowded = [[1, 0], [-1, 0], [0, 1], [0, -1], [0, -2]].some(([ddx, ddy]) => {
-        const t = m.get(x + ddx, y + ddy);
-        return t !== T.GRASS && t !== T.TREE && t !== T.RAVINE && t !== T.WATER && t !== T.FARM;
+      const ch = D.rows[y][x];
+      const p = DENSITY[ch];
+      const t = m.get(x, y);
+      if (!p || (t !== T.GRASS && t !== T.FAIRWAY) || signAt.has(y * m.w + x)) continue;
+      const crowded = [[1, 0], [-1, 0], [0, 1], [0, -1], [0, -2], [1, 1], [-1, 1]].some(([dx, dy]) => {
+        const n = m.get(x + dx, y + dy);
+        return n !== T.GRASS && n !== T.TREE && n !== T.RAVINE && n !== T.WATER && n !== T.FAIRWAY && n !== T.FARM && n !== T.VOID;
       });
-      const inWoods = C.woods.some((w) => inRect(w, x, y));
-      const nearRavine = C.ravines.some((r) => inRect({ x: r.x - 2, y: r.y - 2, w: r.w + 4, h: r.h + 4 }, x, y));
-      let pTree = 0.028;
-      if (inWoods) pTree = 0.5;
-      else if (nearRavine) pTree = 0.3;
-      if (crowded && !inWoods) continue;
-      if (LQ.hash(x, y, 3) < pTree && (x + y) % 2 === 0) {
+      if (crowded && ch !== 'T') continue;
+      if (LQ.hash(x, y, 3) < p && (x + y) % 2 === 0) {
         m.set(x, y, T.TREE);
         m.treeRows[y].push({ x, y, v: Math.floor(LQ.hash(x, y, 5) * 3) });
-      } else if (!inWoods && LQ.hash(x, y, 9) < 0.012) {
+      } else if (ch === '.' && LQ.hash(x, y, 9) < 0.01) {
+        m.set(x, y, T.FLOWERS);
+      } else if (ch === 't' && LQ.hash(x, y, 9) < 0.12) {
         m.set(x, y, T.FLOWERS);
       }
     }
   }
-
-  m.ground = LQ.renderGround(m);
   return m;
 };
 
@@ -214,7 +220,6 @@ LQ.buildInterior = function (def) {
     m.fill(f, T.FURN);
     m.objects.push({ kind: 'furn', f, sortY: (f.y + f.h) * 16, sprite: LQ.renderFurniture(f) });
   }
-  m.ground = LQ.renderGround(m);
   return m;
 };
 
@@ -370,6 +375,16 @@ LQ.drawTile = function (cx, t, x, y, px, py, m) {
       dots(C.roadSpeck, 4, 13);
       cx.fillStyle = '#e8e8e8';
       if (x % 2 === 0 && y % 4 !== 3) cx.fillRect(px, py, 1, 16);
+      // Curb painted in the lot's permit color (as on the campus map).
+      const lot = m.lotColor && m.lotColor.get(y * m.w + x);
+      if (lot) {
+        cx.fillStyle = lot;
+        const edge = (dx, dy) => m.get(x + dx, y + dy) !== T.PARKING;
+        if (edge(0, -1)) cx.fillRect(px, py, 16, 3);
+        if (edge(0, 1)) cx.fillRect(px, py + 13, 16, 3);
+        if (edge(-1, 0)) cx.fillRect(px, py, 3, 16);
+        if (edge(1, 0)) cx.fillRect(px + 13, py, 3, 16);
+      }
       break;
     }
     case T.DIRT: {
@@ -437,16 +452,6 @@ LQ.drawTile = function (cx, t, x, y, px, py, m) {
   }
 };
 
-LQ.renderGround = function (m) {
-  const c = document.createElement('canvas');
-  c.width = m.w * 16;
-  c.height = m.h * 16;
-  const cx = c.getContext('2d');
-  for (let y = 0; y < m.h; y++)
-    for (let x = 0; x < m.w; x++) LQ.drawTile(cx, m.get(x, y), x, y, x * 16, y * 16, m);
-  return c;
-};
-
 // ------------------------------------------------------------ trees
 LQ.treeSprites = null;
 LQ.getTreeSprites = function () {
@@ -481,122 +486,101 @@ LQ.BUILDING_STYLES = {
   glass: { wall: '#90c8f0', wall2: '#70a8d8', roof: '#d8d8e0', roof2: '#b8b8c8', win: '#c8e8ff', trim: '#f8f8f8', glassy: true },
   modern: { wall: '#d0d0d8', wall2: '#b0b0c0', roof: '#7a7a88', roof2: '#62626e', win: '#a8d8f8', trim: '#0032a0', band: true },
   house: { wall: '#f0d890', wall2: '#d8c070', roof: '#c05040', roof2: '#983828', win: '#a8d8f8', trim: '#f8f8f8', house: true },
+  utility: { wall: '#a8a8b0', wall2: '#909098', roof: '#606068', roof2: '#4a4a52', win: '#7898b8', trim: '#c8c8d0' },
   shop: { wall: '#f0e0c0', wall2: '#d8c8a8', roof: '#606878', roof2: '#4a5060', win: '#a8d8f8', trim: '#e04848', awning: true },
 };
 LQ.BUILDING_RISE = 14;   // pixels the roof rises above the footprint (oblique view)
 
+// Draws a building of any traced shape in Earthbound's oblique view: roof
+// tiles seen from above, and the south-facing walls of each column shown as
+// a facade with windows.
 LQ.renderBuilding = function (b) {
   const S = Object.assign({}, LQ.BUILDING_STYLES[b.style] || LQ.BUILDING_STYLES.brick);
-  if (S.house) {
-    const walls = ['#f0d890', '#a8d8a8', '#f0b8a8', '#b8c8f0'];
-    S.wall = walls[Math.floor(LQ.hash(b.x, b.y, 1) * walls.length)];
-  }
-  const W = b.w * 16, R = LQ.BUILDING_RISE;
-  const H = b.h * 16 + R;
-  const c = document.createElement('canvas');
-  c.width = W;
-  c.height = H;
-  const cx = c.getContext('2d');
-  const facadeRows = LQ.clamp(Math.ceil(b.h / 2), 2, 4);
-  const faceTop = H - facadeRows * 16;
   if (b.style === 'brick' || b.style === 'stone') {
-    // Vary roof colors so neighboring buildings read as separate places.
     const roofs = [['#707888', '#5a6070'], ['#9a5040', '#7a3c30'], ['#5a8068', '#46644f'], ['#6a6a9a', '#54547c']];
     const r = roofs[Math.floor(LQ.hash(b.x, b.y, 8) * roofs.length)];
     S.roof = r[0];
     S.roof2 = r[1];
   }
+  const R = LQ.BUILDING_RISE;
+  const W = b.w * 16, H = b.h * 16 + R;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const cx = c.getContext('2d');
+  const has = b.has;
+  // Facade depth: how many tiles of each column's south end are wall.
+  const depth = LQ.clamp(Math.round(Math.min(b.w, b.h) / 3), 1, 3);
+  const wallRows = (x, y) => { let d = 0; while (has(x, y + d)) d++; return d; };   // tiles to the south edge
+  const isFace = (x, y) => has(x, y) && wallRows(x, y) <= depth;
+  const k = '#181820';
 
-  // Roof (seen from above).
-  cx.fillStyle = '#181820';
-  cx.fillRect(0, 0, W, faceTop + 1);
-  cx.fillStyle = S.roof;
-  cx.fillRect(1, 1, W - 2, faceTop - 1);
-  cx.fillStyle = S.roof2;
-  cx.fillRect(1, faceTop - 4, W - 2, 3);
-  if (S.house) {
-    // Gabled roof: ridge line + shingle rows.
-    cx.fillStyle = S.roof2;
-    cx.fillRect(1, Math.floor(faceTop / 2), W - 2, 1);
-    for (let y = 4; y < faceTop - 4; y += 4) for (let x = (y % 8) ? 2 : 6; x < W - 2; x += 8) cx.fillRect(x, y, 1, 3);
-  } else {
-    // Rooftop seams, units and a parapet.
-    cx.fillStyle = S.roof2;
-    cx.fillRect(3, 3, W - 6, 1);
-    for (let y = 8; y < faceTop - 6; y += 6) cx.fillRect(4, y, W - 8, 1);
-    const units = Math.max(1, Math.floor(b.w / 4));
-    for (let i = 0; i < units; i++) {
-      const ux = 6 + Math.floor(LQ.hash(b.x + i, b.y, 2) * (W - 20));
-      const uy = 6 + Math.floor(LQ.hash(b.x, b.y + i, 3) * Math.max(1, faceTop - 22));
-      cx.fillStyle = '#181820';
-      cx.fillRect(ux - 1, uy - 1, 12, 9);
-      cx.fillStyle = '#c0c0c8';
-      cx.fillRect(ux, uy, 10, 7);
-      cx.fillStyle = '#9090a0';
-      cx.fillRect(ux + 2, uy + 2, 6, 3);
-    }
-    if (S.glassy) {
-      cx.fillStyle = '#a8d8f8';
-      cx.fillRect(8, 8, W - 16, Math.max(4, faceTop - 20));
-      cx.fillStyle = '#d8f0ff';
-      for (let x = 10; x < W - 10; x += 8) cx.fillRect(x, 8, 1, Math.max(4, faceTop - 20));
-    }
-  }
-
-  // Facade.
-  cx.fillStyle = '#181820';
-  cx.fillRect(0, faceTop, W, H - faceTop);
-  cx.fillStyle = S.wall;
-  cx.fillRect(1, faceTop + 1, W - 2, H - faceTop - 2);
-  if (b.style === 'brick') {
-    cx.fillStyle = S.wall2;
-    for (let y = faceTop + 3; y < H - 1; y += 3) for (let x = ((y / 3) % 2) * 3 + 1; x < W - 1; x += 6) cx.fillRect(x, y, 4, 1);
-  }
-  cx.fillStyle = S.trim;
-  cx.fillRect(1, faceTop + 1, W - 2, 2);
-  if (S.band) { cx.fillStyle = '#0032a0'; cx.fillRect(1, faceTop + 4, W - 2, 3); }
-  if (S.awning) {
-    for (let x = 1; x < W - 1; x += 4) { cx.fillStyle = (x / 4) % 2 ? '#f8f8f8' : '#e04848'; cx.fillRect(x, faceTop + 3, 4, 5); }
-  }
-
-  // Windows.
-  const doorCol = b.door !== undefined ? b.door : Math.floor(b.w / 2);
-  const rows = [];
-  for (let r = 0; r < facadeRows; r++) rows.push(faceTop + 10 + r * 16);
-  for (const wy of rows) {
-    for (let col = 0; col < b.w; col++) {
-      if (col === doorCol && wy > H - 30) continue;
-      const wx = col * 16 + 4;
-      if (S.glassy) {
-        cx.fillStyle = '#304860';
-        cx.fillRect(wx - 3, wy - 1, 16, 12);
-        cx.fillStyle = S.win;
-        cx.fillRect(wx - 2, wy, 14, 10);
-        cx.fillStyle = '#f8ffff';
-        cx.fillRect(wx - 1, wy + 1, 2, 4);
-      } else {
-        cx.fillStyle = '#283040';
-        cx.fillRect(wx - 1, wy - 1, 10, 11);
-        cx.fillStyle = S.win;
-        cx.fillRect(wx, wy, 8, 9);
-        cx.fillStyle = '#f8ffff';
-        cx.fillRect(wx + 1, wy + 1, 2, 3);
-        cx.fillStyle = '#283040';
-        cx.fillRect(wx, wy + 4, 8, 1);
+  // Outline pass, then fill pass (roof shifted up by R, facades stretched to meet it).
+  for (const pass of [0, 1]) {
+    for (let y = 0; y < b.h; y++)
+      for (let x = 0; x < b.w; x++) {
+        if (!has(x, y)) continue;
+        const px = x * 16, top = y * 16, face = isFace(x, y);
+        // Canvas row 0 is R pixels above the footprint.
+        const y0 = top, y1 = top + 16 + (face ? R : 0);
+        if (pass === 0) {
+          cx.fillStyle = k;
+          cx.fillRect(px, y0, 16, y1 - y0);
+          continue;
+        }
+        const l = has(x - 1, y) ? 0 : 1, r = has(x + 1, y) ? 0 : 1, t = has(x, y - 1) ? 0 : 1;
+        if (!face) {
+          cx.fillStyle = S.roof;
+          cx.fillRect(px + l, y0 + t, 16 - l - r, 16 - t);
+          cx.fillStyle = S.roof2;
+          if ((y + b.y) % 2 === 0) cx.fillRect(px + l, y0 + 8, 16 - l - r, 1);
+          if (isFace(x, y + 1)) { cx.fillRect(px + l, y0 + 13, 16 - l - r, 3); }
+          if (S.glassy && LQ.hash(x + b.x, y + b.y, 4) < 0.5) { cx.fillStyle = '#a8d8f8'; cx.fillRect(px + 3, y0 + 3, 10, 8); }
+          else if (LQ.hash(x + b.x, y + b.y, 2) < 0.06) {
+            cx.fillStyle = k; cx.fillRect(px + 3, y0 + 3, 10, 8);
+            cx.fillStyle = '#c0c0c8'; cx.fillRect(px + 4, y0 + 4, 8, 6);
+          }
+        } else {
+          const bottom = !has(x, y + 1);
+          const firstFace = !isFace(x, y - 1);
+          const fy0 = firstFace ? y0 + (has(x, y - 1) ? 0 : t) : y0 + R;
+          const fy1 = top + 16 + R - (bottom ? 1 : 0);
+          cx.fillStyle = S.wall;
+          cx.fillRect(px + l, fy0, 16 - l - r, fy1 - fy0);
+          if (b.style === 'brick') {
+            cx.fillStyle = S.wall2;
+            for (let yy = fy0 + 2; yy < fy1; yy += 3) for (let xx = px + l + (((yy / 3) | 0) % 2) * 3; xx < px + 16 - r; xx += 6) cx.fillRect(xx, yy, 3, 1);
+          }
+          if (firstFace) {
+            cx.fillStyle = S.trim;
+            cx.fillRect(px + l, fy0, 16 - l - r, 2);
+            if (S.band) { cx.fillStyle = '#0032a0'; cx.fillRect(px + l, fy0 + 3, 16 - l - r, 2); }
+            if (S.awning) for (let xx = px; xx < px + 16; xx += 4) { cx.fillStyle = (xx / 4) % 2 ? '#f8f8f8' : '#e04848'; cx.fillRect(xx, fy0 + 2, 4, 4); }
+          }
+          // Window (doors drawn below).
+          const isDoor = b.door && b.door[0] === b.x + x && b.door[1] === b.y + y;
+          if (!isDoor) {
+            const wy = top + R + 4;
+            if (S.glassy) {
+              cx.fillStyle = '#304860'; cx.fillRect(px + l, wy - 1, 16 - l - r, 11);
+              cx.fillStyle = S.win; cx.fillRect(px + l, wy, 16 - l - r, 9);
+              cx.fillStyle = '#f8ffff'; cx.fillRect(px + 3, wy + 1, 2, 4);
+            } else {
+              cx.fillStyle = '#283040'; cx.fillRect(px + 3, wy - 1, 10, 11);
+              cx.fillStyle = S.win; cx.fillRect(px + 4, wy, 8, 9);
+              cx.fillStyle = '#f8ffff'; cx.fillRect(px + 5, wy + 1, 2, 3);
+              cx.fillStyle = '#283040'; cx.fillRect(px + 4, wy + 4, 8, 1);
+            }
+          } else {
+            const dx = px + 2, dy = top + R + 16;
+            cx.fillStyle = k; cx.fillRect(dx - 1, dy - 15, 14, 15);
+            cx.fillStyle = b.interior ? '#5a3a28' : '#584848'; cx.fillRect(dx, dy - 14, 12, 14);
+            cx.fillStyle = b.interior ? '#a8d8f8' : '#7a6a6a'; cx.fillRect(dx + 2, dy - 12, 8, 5);
+            cx.fillStyle = '#f8d040'; cx.fillRect(dx + 9, dy - 6, 2, 2);
+          }
+        }
       }
-    }
   }
-
-  // Door.
-  const dx = doorCol * 16 + 2;
-  cx.fillStyle = '#181820';
-  cx.fillRect(dx - 1, H - 21, 14, 21);
-  cx.fillStyle = b.interior ? '#5a3a28' : '#584848';
-  cx.fillRect(dx, H - 20, 12, 20);
-  cx.fillStyle = b.interior ? '#a8d8f8' : '#7a6a6a';
-  cx.fillRect(dx + 2, H - 18, 8, 7);
-  cx.fillStyle = '#f8d040';
-  cx.fillRect(dx + 9, H - 9, 2, 2);
   return c;
 };
 

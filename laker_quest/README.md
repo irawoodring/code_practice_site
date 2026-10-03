@@ -37,16 +37,23 @@ Save by checking a phone (in Kirkhof, Zumberge, the Fieldhouse, your dorm, and a
 
 ## The campus
 
-The map is 150×160 tiles (about 12 m per tile). The aim is to get the relative positions and orientation right, not exact footprints:
+The campus is traced from GVSU's official Allendale campus map, the version with the A–F / 1–9 grid. `tools/trace_map.py` classifies the map by color into buildings, roads, sidewalks, parking lots (in their permit colors), fields and water. It then turns every 2×2 block of map pixels into one game tile and names each building from the map's labels. The output is `src/campus_map.js`, 214×284 tiles with 154 buildings.
 
-- Lake Michigan Drive (M-45) runs along the **north** edge, and the main entrance turns south onto North Campus Drive.
-- The Grand River and its wooded ravines are to the **east**.
-- Athletics (Fieldhouse, Kelly Family Sports Center, Lubbers Stadium) are on the **west** side next to the golf course. 48th Avenue and the village of Allendale are farther west.
-- Housing is at the north end (Kleiner Commons and the living centers) and the south end (GVA, Copeland, Kirkpatrick, Robinson, Swanson). Academic buildings are in the middle.
-- Mary Idema Pew Library sits at Campus Drive and West Campus Drive, next to the Kirkhof Center, near the Cook Carillon and Zumberge Pond.
-- The Little Mac Bridge crosses the ravine between Henry Hall and Great Lakes Plaza.
+That means building shapes, roads, lots and their positions relative to each other match the map. A few things were added by hand where the map is blank or only schematic:
 
-Every building, road, path and landmark is defined in [`src/campus.js`](src/campus.js). To move a building, change its numbers there. Paths to doors, signs and the overview map update automatically.
+- The creek ravine and the Little Mac Bridge across it to the Arboretum
+- The Meadows golf course, farmland south of Pierce St, and the woods and Grand River east of campus (off the edge of the map)
+- The Cook Carillon Tower, which the map shows as a tiny square
+
+Signs, NPCs and enemy areas in `src/campus.js` and `src/data.js` are placed in map-image pixel coordinates, so any spot can be checked against the map.
+
+To regenerate the map (needs Pillow, numpy and scipy):
+
+```sh
+python3 tools/trace_map.py path/to/allendale_campus_map.jpg --preview preview.png
+```
+
+The map image itself isn't included in the repo.
 
 ## Code layout
 
@@ -55,8 +62,9 @@ Every building, road, path and landmark is defined in [`src/campus.js`](src/camp
 | `src/font.js` | Hand-drawn 5×7 bitmap font |
 | `src/engine.js` | Input, sprite helpers, window frames, sound effects |
 | `src/sprites.js` | Character template and enemy pixel art |
-| `src/campus.js` | Campus layout data |
-| `src/world.js` | Tilemap generation, tile, building, tree and furniture rendering |
+| `src/campus_map.js` | Generated tile map and building shapes (from `tools/trace_map.py`) |
+| `src/campus.js` | Signs, interiors and map labels, placed in campus map coordinates |
+| `src/world.js` | Builds the playable map; draws tiles, buildings of any shape, trees and furniture |
 | `src/data.js` | Stats, items, PSI, enemies, NPC dialogue, interiors |
 | `src/battle.js` | Battle system and animated backgrounds |
 | `src/game.js` | Game states, overworld, menus, saving, ending |

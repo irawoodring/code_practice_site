@@ -1,7 +1,8 @@
 // Main game: state machine, overworld, dialogue, menus, saving.
 window.LQ = window.LQ || {};
 
-const SAVE_KEY = 'laker_quest_save_v1';
+const SAVE_KEY = 'laker_quest_save_v2';   // v2: traced campus map
+LQ.MAP_SHRINK = 1.5;
 
 LQ.Game = class {
   constructor(canvas) {
@@ -65,15 +66,20 @@ LQ.Game = class {
     this.map = m;
     this.state = 'world';
     if (!spot) {
-      if (m.id === 'campus') spot = { x: 86 * 16 + 8, y: 20 * 16, dir: 'down' };
+      if (m.id === 'campus') spot = this.findDoorSpot('frey');
       else spot = { x: (Math.floor(m.w / 2)) * 16, y: (m.h - 2) * 16 + 12, dir: 'up' };
     }
     this.pl = { x: spot.x, y: spot.y, dir: spot.dir || 'down', frame: 0, anim: 0, moving: false };
-    this.npcs = LQ.NPCS.filter((n) => n.map === id).map((n) => ({
-      def: n, x: n.x * 16 + 8, y: n.y * 16 + 14, homeX: n.x * 16 + 8, homeY: n.y * 16 + 14,
-      dir: n.dir || 'down', frame: 0, anim: 0, wanderT: LQ.rand(30, 120), vx: 0, vy: 0,
-      sprites: this.spritesFor(n.look),
-    }));
+    this.npcs = LQ.NPCS.filter((n) => n.map === id).map((n) => {
+      // Campus NPCs are placed by campus-map image coordinates.
+      const [tx, ty] = n.img ? m.snapOpen(...LQ.imgTile(n.img[0], n.img[1])) : [n.x, n.y];
+      const x = tx * 16 + 8, y = ty * 16 + 14;
+      return {
+        def: n, x, y, homeX: x, homeY: y,
+        dir: n.dir || 'down', frame: 0, anim: 0, wanderT: LQ.rand(30, 120), vx: 0, vy: 0,
+        sprites: this.spritesFor(n.look),
+      };
+    });
     if (m.id === 'campus') this.clearUnderNpcs(m);
     this.phone = m.def && m.def.phone ? m.def.phone : null;
     if (this.phone) m.solidOverride.set(this.phone.y * m.w + this.phone.x, true);
@@ -101,7 +107,7 @@ LQ.Game = class {
   spawnEnemies() {
     this.enemies = [];
     if (this.map.id === 'campus') {
-      this.spawnGroups = LQ.SPAWNS.map((s) => Object.assign({}, s));
+      this.spawnGroups = LQ.SPAWNS.map((s) => Object.assign({ type: s.type, count: s.count }, LQ.imgRect(...s.img)));
       if (this.flags.bossBeaten) this.spawnGroups.forEach((g) => { g.count = Math.ceil(g.count / 2); });
     } else {
       const ens = (this.map.def.enemies || []).filter(() => !this.flags.bossBeaten);
@@ -262,7 +268,7 @@ LQ.Game = class {
     this.popup = null;
     if (this.map.id === 'campus') {
       for (const d of this.map.doors) {
-        if (Math.abs(d.x * 16 + 8 - p.x) < 40 && p.y - d.y * 16 > 0 && p.y - d.y * 16 < 56) { this.popup = d.building.name; break; }
+        if (Math.abs(d.x * 16 + 8 - p.x) < 40 && p.y - d.y * 16 > 0 && p.y - d.y * 16 < 56) { this.popup = d.building.name.split(' / ')[0]; break; }
       }
       const c = this.map.carillon;
       if (!this.popup && Math.abs(c.x * 16 + 16 - p.x) < 40 && p.y - (c.y + 2) * 16 > -8 && p.y - (c.y + 2) * 16 < 48) this.popup = 'Cook Carillon Tower';
@@ -712,28 +718,30 @@ LQ.Game = class {
     LQ.drawText(ctx, 'Goal: ' + goal, 22, 190, LQ.COLORS.highlight);
   }
 
-  // Overview of the whole campus: 1 pixel per tile.
+  // Overview of the whole campus, shrunk to fit the screen.
   getMapImage() {
     if (this.mapImage) return this.mapImage;
     const m = this.getMap('campus');
+    const k = LQ.MAP_SHRINK;
     const c = document.createElement('canvas');
-    c.width = m.w;
-    c.height = m.h;
+    c.width = Math.floor(m.w / k);
+    c.height = Math.floor(m.h / k);
     const cx = c.getContext('2d');
     const T = LQ.T;
     const col = {
       [T.GRASS]: '#78c060', [T.TREE]: '#3a8a3a', [T.FLOWERS]: '#78c060', [T.PATH]: '#e0dccc', [T.DOOR]: '#e0dccc',
-      [T.BRICK]: '#d08870', [T.ROAD]: '#505060', [T.ROAD_LINE_H]: '#505060', [T.ROAD_LINE_V]: '#505060',
-      [T.WATER]: '#4898e8', [T.RAVINE]: '#2a5a2a', [T.BRIDGE]: '#c09060', [T.TURF]: '#40a040', [T.FAIRWAY]: '#90d880',
-      [T.SAND]: '#f0e0a0', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#b85a48', [T.STANDS]: '#9898a8', [T.DIRT]: '#c8a070',
+      [T.ROAD]: '#505060', [T.WATER]: '#4898e8', [T.RAVINE]: '#2a5a2a', [T.BRIDGE]: '#c09060', [T.TURF]: '#40a040',
+      [T.FAIRWAY]: '#90d880', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448',
     };
-    for (let y = 0; y < m.h; y++)
-      for (let x = 0; x < m.w; x++) {
-        cx.fillStyle = col[m.get(x, y)] || '#000';
+    for (let y = 0; y < c.height; y++)
+      for (let x = 0; x < c.width; x++) {
+        const tx = Math.floor(x * k), ty = Math.floor(y * k);
+        // Buildings win so small ones don't vanish when shrunk.
+        let t = m.get(tx, ty);
+        if ([[1, 0], [0, 1], [1, 1]].some(([dx, dy]) => { const n = m.get(tx + dx, ty + dy); return n === T.BUILDING || n === T.DOOR && m.buildingAt(tx + dx, ty + dy); })) t = T.BUILDING;
+        cx.fillStyle = (t === T.PARKING && m.lotColor.get(ty * m.w + tx)) || col[t] || '#78c060';
         cx.fillRect(x, y, 1, 1);
       }
-    cx.fillStyle = '#f8d040';
-    cx.fillRect(m.carillon.x, m.carillon.y, 2, 2);
     this.mapImage = c;
     return c;
   }
@@ -742,47 +750,50 @@ LQ.Game = class {
     ctx.fillStyle = '#101018';
     ctx.fillRect(0, 0, LQ.W, LQ.H);
     const img = this.getMapImage();
-    const ox = 6, oy = 32;
+    const k = LQ.MAP_SHRINK;
+    const ox = 6, oy = 28;
     ctx.drawImage(img, ox, oy);
     ctx.strokeStyle = '#f8f8f8';
     ctx.strokeRect(ox - 0.5, oy - 0.5, img.width + 1, img.height + 1);
-    LQ.drawText(ctx, 'GVSU Allendale & around', 8, 6, LQ.COLORS.highlight);
-    LQ.drawText(ctx, 'N^   (X to close)', 8, 18, LQ.COLORS.textDim);
+    LQ.drawText(ctx, 'GVSU Allendale Campus', 8, 4, LQ.COLORS.highlight);
+    LQ.drawText(ctx, 'N^   (X to close)', 8, 15, LQ.COLORS.textDim);
 
     const campus = this.getMap('campus');
     LQ.CAMPUS.mapLabels.forEach((l) => {
       const b = campus.buildings.find((bb) => bb.id === l.ref);
-      LQ.drawText(ctx, l.abbr, ox + b.x + (l.dx || 0), oy + b.y + (l.dy || 0), '#f8f8f8', '#101018');
+      if (!b) return;
+      LQ.drawText(ctx, l.abbr, ox + Math.floor(b.x / k) + (l.dx || 0), oy + Math.floor(b.y / k) + (l.dy || 0), '#f8f8f8', '#101018');
     });
-    // The carillon gets a blinking marker instead of a label.
-    const ca = LQ.CAMPUS.carillon;
+    const ca = campus.carillon;
     ctx.fillStyle = Math.floor(this.t / 15) % 2 ? '#f8d040' : '#c08010';
-    ctx.fillRect(ox + ca.x - 1, oy + ca.y - 1, 4, 4);
+    ctx.fillRect(ox + Math.floor(ca.x / k) - 1, oy + Math.floor(ca.y / k) - 1, 3, 3);
 
     // Player dot (or the building they're inside).
     let px = this.pl.x / 16, py = this.pl.y / 16;
     if (this.map.id !== 'campus') { const s = this.returnSpot || this.findDoorSpot(this.map.id); if (s) { px = s.x / 16; py = s.y / 16; } }
-    if (Math.floor(this.t / 10) % 2) { ctx.fillStyle = '#ff3030'; ctx.fillRect(ox + px - 1, oy + py - 1, 3, 3); }
+    if (Math.floor(this.t / 10) % 2) { ctx.fillStyle = '#ff3030'; ctx.fillRect(ox + Math.floor(px / k) - 1, oy + Math.floor(py / k) - 1, 3, 3); }
 
     const legend = [
-      ['LIB', 'Library'], ['KIR', 'Kirkhof'], ['ZUM', 'Zumberge'], ['GLP', 'Great Lks'],
-      ['PAD', 'Padnos'], ['KLN', 'Kleiner'], ['FH', 'Fieldhs.'],
+      ['LIB', 'Library'], ['KC', 'Kirkhof'], ['JHZ', 'Zumberge'], ['ASH', 'Au Sable'],
+      ['PAD', 'Padnos'], ['KLC', 'Kleiner'], ['FH', 'Fieldhs.'],
     ];
-    const lx = 162;
+    const lx = 156;
     legend.forEach(([a, n], i) => {
-      LQ.drawText(ctx, a, lx, 34 + i * 11, '#f8f8f8');
-      LQ.drawText(ctx, n, lx + 28, 34 + i * 11, LQ.COLORS.textDim);
+      LQ.drawText(ctx, a, lx, 30 + i * 11, '#f8f8f8');
+      LQ.drawText(ctx, n, lx + 26, 30 + i * 11, LQ.COLORS.textDim);
     });
     ctx.fillStyle = '#f8d040';
-    ctx.fillRect(lx + 1, 124, 4, 4);
-    LQ.drawText(ctx, 'Carillon', lx + 28, 122, LQ.COLORS.textDim);
+    ctx.fillRect(lx + 1, 113, 3, 3);
+    LQ.drawText(ctx, 'Carillon', lx + 26, 110, LQ.COLORS.textDim);
     ctx.fillStyle = '#ff3030';
-    ctx.fillRect(lx + 1, 135, 3, 3);
-    LQ.drawText(ctx, 'You', lx + 28, 133, LQ.COLORS.textDim);
-    LQ.drawText(ctx, 'M-45 north', lx, 154, '#f8d040');
-    LQ.drawText(ctx, 'River east', lx, 166, '#88c8f8');
-    LQ.drawText(ctx, 'Allendale', lx, 178, '#f8f8f8');
-    LQ.drawText(ctx, '  west', lx, 189, '#f8f8f8');
+    ctx.fillRect(lx + 1, 124, 3, 3);
+    LQ.drawText(ctx, 'You', lx + 26, 121, LQ.COLORS.textDim);
+    LQ.drawText(ctx, 'M-45 north', lx, 142, '#f8d040');
+    LQ.drawText(ctx, 'River east', lx, 154, '#88c8f8');
+    LQ.drawText(ctx, 'Pierce St', lx, 166, '#f8f8f8');
+    LQ.drawText(ctx, '  south', lx, 177, '#f8f8f8');
+    LQ.drawText(ctx, 'Traced from', lx, 196, LQ.COLORS.textDim);
+    LQ.drawText(ctx, 'GVSU map', lx, 207, LQ.COLORS.textDim);
   }
 
   // ======================================================== ending / game over
@@ -1001,7 +1012,7 @@ LQ.Game = class {
     if (mh <= LQ.H) camY = -Math.floor((LQ.H - mh) / 2); else camY = LQ.clamp(Math.round(p.y - 12 - LQ.H / 2), 0, mh - LQ.H);
     ctx.fillStyle = '#101018';
     ctx.fillRect(0, 0, LQ.W, LQ.H);
-    ctx.drawImage(m.ground, -camX, -camY);
+    m.drawGround(ctx, camX, camY, LQ.W, LQ.H);
 
     // Animated water sparkle.
     const tx0 = Math.max(0, Math.floor(camX / 16)), ty0 = Math.max(0, Math.floor(camY / 16));
@@ -1020,9 +1031,8 @@ LQ.Game = class {
     const draws = [];
     const inView = (x, y, w, h) => x + w > camX && x < camX + LQ.W && y + h > camY && y < camY + LQ.H;
     for (const o of m.objects) {
-      if (o.kind === 'building') {
-        const b = o.b, x = b.x * 16, y = (b.y + b.h) * 16 - o.sprite.height;
-        if (inView(x, y, o.sprite.width, o.sprite.height)) draws.push({ y: o.sortY, fn: () => ctx.drawImage(o.sprite, x - camX, y - camY) });
+      if (o.kind === 'bslice') {
+        if (inView(o.x, o.y, o.w, o.sh)) draws.push({ y: o.sortY, fn: () => ctx.drawImage(o.sprite, 0, o.sy, o.w, o.sh, o.x - camX, o.y - camY, o.w, o.sh) });
       } else if (o.kind === 'carillon') {
         const x = o.x, y = o.y - o.sprite.height;
         if (inView(x, y, o.sprite.width, o.sprite.height)) draws.push({ y: o.sortY, fn: () => ctx.drawImage(o.sprite, x - camX, y - camY) });
