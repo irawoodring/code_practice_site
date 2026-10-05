@@ -2,7 +2,7 @@
 window.LQ = window.LQ || {};
 
 const SAVE_KEY = 'laker_quest_save_v2';   // v2: traced campus map
-LQ.MAP_SHRINK = 1.5;
+LQ.MAP_SHRINK = 1;   // map screen pixels per tile (1 = one pixel per tile)
 
 LQ.Game = class {
   constructor(canvas) {
@@ -573,9 +573,20 @@ LQ.Game = class {
         break;
       }
       case 'status':
-      case 'map':
         if (I.hit('cancel') || I.hit('ok') || I.hit('map') || I.hit('menu')) { this.menu = m.parent || null; LQ.Sound.cancel(); }
         break;
+      case 'map': {
+        if (I.hit('cancel') || I.hit('ok') || I.hit('map') || I.hit('menu')) { this.menu = m.parent || null; LQ.Sound.cancel(); break; }
+        if (m.vx === undefined) break;
+        const img = this.getMapImage(), V = this.mapViewport(), sp = 3;
+        if (I.held('left')) m.vx -= sp;
+        if (I.held('right')) m.vx += sp;
+        if (I.held('up')) m.vy -= sp;
+        if (I.held('down')) m.vy += sp;
+        m.vx = LQ.clamp(m.vx, 0, Math.max(0, img.width - V.w));
+        m.vy = LQ.clamp(m.vy, 0, Math.max(0, img.height - V.h));
+        break;
+      }
       case 'shop': {
         nav(m.stock.length + 1);
         if (I.hit('cancel') || (I.hit('ok') && m.cursor === m.stock.length)) { this.menu = null; this.say(['Thanks! Come again!']); return; }
@@ -731,7 +742,7 @@ LQ.Game = class {
     const col = {
       [T.GRASS]: '#78c060', [T.TREE]: '#3a8a3a', [T.FLOWERS]: '#78c060', [T.PATH]: '#e0dccc', [T.DOOR]: '#e0dccc',
       [T.ROAD]: '#505060', [T.WATER]: '#4898e8', [T.RAVINE]: '#2a5a2a', [T.BRIDGE]: '#c09060', [T.TURF]: '#40a040',
-      [T.FAIRWAY]: '#90d880', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448',
+      [T.FAIRWAY]: '#90d880', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448', [T.DIRT]: '#c8a070',
     };
     for (let y = 0; y < c.height; y++)
       for (let x = 0; x < c.width; x++) {
@@ -740,60 +751,72 @@ LQ.Game = class {
         let t = m.get(tx, ty);
         if ([[1, 0], [0, 1], [1, 1]].some(([dx, dy]) => { const n = m.get(tx + dx, ty + dy); return n === T.BUILDING || n === T.DOOR && m.buildingAt(tx + dx, ty + dy); })) t = T.BUILDING;
         cx.fillStyle = (t === T.PARKING && m.lotColor.get(ty * m.w + tx)) || col[t] || '#78c060';
+        if (m.terrain[ty][tx] === 'T' && t !== T.PATH && t !== T.DIRT) cx.fillStyle = '#3a8a3a';
+        if (m.terrain[ty][tx] === 'G' && t === T.FAIRWAY) cx.fillStyle = '#a8e090';
         cx.fillRect(x, y, 1, 1);
       }
     this.mapImage = c;
     return c;
   }
 
+  // The map screen shows the campus at one pixel per tile, centered on you.
+  // Arrow keys scroll it.
+  mapViewport() { return { x: 6, y: 24, w: 244, h: 178 }; }
+
   drawMapScreen(ctx) {
     ctx.fillStyle = '#101018';
     ctx.fillRect(0, 0, LQ.W, LQ.H);
     const img = this.getMapImage();
-    const k = LQ.MAP_SHRINK;
-    const ox = 6, oy = 28;
-    ctx.drawImage(img, ox, oy);
+    const V = this.mapViewport();
+    const m = this.menu;
+    if (m.vx === undefined) {
+      const [px, py] = this.mapPlayerTile();
+      m.vx = LQ.clamp(Math.round(px - V.w / 2), 0, Math.max(0, img.width - V.w));
+      m.vy = LQ.clamp(Math.round(py - V.h / 2), 0, Math.max(0, img.height - V.h));
+    }
+    ctx.drawImage(img, m.vx, m.vy, V.w, V.h, V.x, V.y, V.w, V.h);
     ctx.strokeStyle = '#f8f8f8';
-    ctx.strokeRect(ox - 0.5, oy - 0.5, img.width + 1, img.height + 1);
+    ctx.strokeRect(V.x - 0.5, V.y - 0.5, V.w + 1, V.h + 1);
     LQ.drawText(ctx, 'GVSU Allendale Campus', 8, 4, LQ.COLORS.highlight);
-    LQ.drawText(ctx, 'N^   (X to close)', 8, 15, LQ.COLORS.textDim);
+    LQ.drawText(ctx, 'N^  Arrows: scroll  X: close', 8, 14, LQ.COLORS.textDim);
 
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(V.x, V.y, V.w, V.h);
+    ctx.clip();
+    const sx = (tx) => V.x + tx - m.vx, sy = (ty) => V.y + ty - m.vy;
     const campus = this.getMap('campus');
     LQ.CAMPUS.mapLabels.forEach((l) => {
       const b = campus.buildings.find((bb) => bb.id === l.ref);
       if (!b) return;
-      LQ.drawText(ctx, l.abbr, ox + Math.floor(b.x / k) + (l.dx || 0), oy + Math.floor(b.y / k) + (l.dy || 0), '#f8f8f8', '#101018');
+      const tw = LQ.textWidth(l.abbr), cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+      let x = cx - tw / 2, y = cy - 4;
+      if (l.side === 'left') x = b.x - tw - 2;
+      if (l.side === 'right') x = b.x + b.w + 2;
+      if (l.side === 'top') y = b.y - 9;
+      if (l.side === 'bottom') y = b.y + b.h + 1;
+      LQ.drawText(ctx, l.abbr, Math.round(sx(x)), Math.round(sy(y)), '#f8f8f8', '#101018');
     });
     const ca = campus.carillon;
     ctx.fillStyle = Math.floor(this.t / 15) % 2 ? '#f8d040' : '#c08010';
-    ctx.fillRect(ox + Math.floor(ca.x / k) - 1, oy + Math.floor(ca.y / k) - 1, 3, 3);
+    ctx.fillRect(sx(ca.x) - 1, sy(ca.y) - 1, 4, 4);
+    const [px, py] = this.mapPlayerTile();
+    if (Math.floor(this.t / 10) % 2) { ctx.fillStyle = '#ff3030'; ctx.fillRect(sx(px) - 1, sy(py) - 1, 3, 3); }
+    ctx.restore();
 
-    // Player dot (or the building they're inside).
+    ctx.fillStyle = '#ff3030';
+    ctx.fillRect(10, 210, 3, 3);
+    LQ.drawText(ctx, 'You', 16, 207, LQ.COLORS.textDim);
+    ctx.fillStyle = '#f8d040';
+    ctx.fillRect(42, 210, 3, 3);
+    LQ.drawText(ctx, 'Carillon', 48, 207, LQ.COLORS.textDim);
+    LQ.drawText(ctx, 'Map data (c) OpenStreetMap', 96, 207, LQ.COLORS.textDim);
+  }
+
+  mapPlayerTile() {
     let px = this.pl.x / 16, py = this.pl.y / 16;
     if (this.map.id !== 'campus') { const s = this.returnSpot || this.findDoorSpot(this.map.id); if (s) { px = s.x / 16; py = s.y / 16; } }
-    if (Math.floor(this.t / 10) % 2) { ctx.fillStyle = '#ff3030'; ctx.fillRect(ox + Math.floor(px / k) - 1, oy + Math.floor(py / k) - 1, 3, 3); }
-
-    const legend = [
-      ['LIB', 'Library'], ['KC', 'Kirkhof'], ['JHZ', 'Zumberge'], ['ASH', 'Au Sable'],
-      ['PAD', 'Padnos'], ['KLC', 'Kleiner'], ['FH', 'Fieldhs.'],
-    ];
-    const lx = 156;
-    legend.forEach(([a, n], i) => {
-      LQ.drawText(ctx, a, lx, 30 + i * 11, '#f8f8f8');
-      LQ.drawText(ctx, n, lx + 26, 30 + i * 11, LQ.COLORS.textDim);
-    });
-    ctx.fillStyle = '#f8d040';
-    ctx.fillRect(lx + 1, 113, 3, 3);
-    LQ.drawText(ctx, 'Carillon', lx + 26, 110, LQ.COLORS.textDim);
-    ctx.fillStyle = '#ff3030';
-    ctx.fillRect(lx + 1, 124, 3, 3);
-    LQ.drawText(ctx, 'You', lx + 26, 121, LQ.COLORS.textDim);
-    LQ.drawText(ctx, 'M-45 north', lx, 142, '#f8d040');
-    LQ.drawText(ctx, 'River east', lx, 154, '#88c8f8');
-    LQ.drawText(ctx, 'Pierce St', lx, 166, '#f8f8f8');
-    LQ.drawText(ctx, '  south', lx, 177, '#f8f8f8');
-    LQ.drawText(ctx, 'Traced from', lx, 196, LQ.COLORS.textDim);
-    LQ.drawText(ctx, 'GVSU map', lx, 207, LQ.COLORS.textDim);
+    return [Math.floor(px), Math.floor(py)];
   }
 
   // ======================================================== ending / game over
@@ -1086,9 +1109,11 @@ LQ.Game = class {
 
     // HUD bits.
     if (this.popup && !this.dialog && !this.menu) {
-      const w = LQ.textWidth(this.popup) + 16;
-      LQ.drawWindow(ctx, 8, LQ.H - 26, w, 20);
-      LQ.drawText(ctx, this.popup, 16, LQ.H - 20, LQ.COLORS.text);
+      const lines = LQ.wrapText(this.popup, 228);
+      const w = Math.max(...lines.map((l) => LQ.textWidth(l))) + 16;
+      const h = lines.length * LQ.LINE_HEIGHT + 8;
+      LQ.drawWindow(ctx, 8, LQ.H - 6 - h, w, h);
+      lines.forEach((l, i) => LQ.drawText(ctx, l, 16, LQ.H - h + i * LQ.LINE_HEIGHT, LQ.COLORS.text));
     }
     if (this.areaNameT > 0 && !this.dialog) {
       const w = LQ.textWidth(this.areaName) + 16;

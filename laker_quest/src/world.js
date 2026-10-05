@@ -94,7 +94,7 @@ LQ.GameMap = class {
 // Terrain char from the traced map -> tile type.
 LQ.MAP_CHARS = {
   '.': T.GRASS, B: T.BUILDING, K: T.BUILDING, R: T.ROAD, W: T.PATH,
-  r: T.PARKING, b: T.PARKING, y: T.PARKING, g: T.PARKING, u: T.PARKING, o: T.PARKING, k: T.PARKING,
+  p: T.PARKING, r: T.PARKING, b: T.PARKING, y: T.PARKING, g: T.PARKING, u: T.PARKING, o: T.PARKING, k: T.PARKING,
   F: T.TURF, '~': T.WATER, G: T.FAIRWAY, A: T.FARM, T: T.GRASS, V: T.RAVINE, '=': T.BRIDGE, t: T.GRASS, D: T.DIRT,
 };
 // Parking lot colors match the campus map's permit colors.
@@ -133,6 +133,7 @@ LQ.findBuildings = function (D) {
       out.push({
         id: entries.length ? entries[0].id : 'b' + out.length,
         code: entries.map((e) => e.code).filter(Boolean).join('/'),
+        style: entries.length ? entries[0].style : null,
         name: entries.length ? entries.map((e) => e.name).join(' / ') : 'Campus building',
         x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, cells,
       });
@@ -160,7 +161,7 @@ LQ.buildCampus = function () {
     const w = src.w, h = src.h;
     const has = (x, y) => src.cells.has((src.x + x) + ',' + (src.y + y));
     const interior = C.interiors[src.id] || null;
-    const style = C.styles[src.id] || 'brick';
+    const style = C.styles[src.id] || src.style || 'brick';
     // Door: a south-facing edge near the middle, preferring sidewalks.
     let door = null, best = 1e9;
     for (let y = 0; y < h; y++)

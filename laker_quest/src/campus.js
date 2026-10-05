@@ -3,13 +3,17 @@
 // The ground, roads, lots, fields and building shapes come from GVSU's
 // official Allendale campus map via tools/trace_map.py. Positions here are in
 // IMAGE PIXELS of that map (the 560x732 version with the A-F / 1-9 grid), so
-// you can check any spot against the map. LQ.imgTile converts to tiles.
+// you can check any spot against the map. LQ.imgTile converts to tiles using
+// the alignment stored in campus_map.js.
 window.LQ = window.LQ || {};
 
 LQ.imgTile = function (x, y) {
-  const [ox, oy] = LQ.CAMPUS_MAP.origin;
-  const s = LQ.CAMPUS_MAP.scale;
-  return [Math.floor((x - ox) / s), Math.floor((y - oy) / s)];
+  const M = LQ.CAMPUS_MAP;
+  if (M.imgAffine) {
+    const [a, b, c, d, e, f] = M.imgAffine;
+    return [Math.floor(a * x + b * y + c), Math.floor(d * x + e * y + f)];
+  }
+  return [Math.floor((x - M.origin[0]) / M.scale), Math.floor((y - M.origin[1]) / M.scale)];
 };
 LQ.imgRect = function (x0, y0, x1, y1) {
   const [a, b] = LQ.imgTile(x0, y0);
@@ -45,14 +49,17 @@ LQ.CAMPUS = {
     { at: [430, 600], text: 'Grand Valley Apartments.' },
   ],
 
-  // Overview map labels: building id + optional offset in map pixels.
+  // Overview map labels: building id, abbreviation, and which side of the
+  // building to put it on (left, right, top, bottom).
   mapLabels: [
-    { abbr: 'LIB', ref: 'lib', dx: -19, dy: 0 },
-    { abbr: 'KC', ref: 'kc', dx: 0, dy: 9 },
-    { abbr: 'JHZ', ref: 'jhz', dx: 4, dy: 9 },
-    { abbr: 'ASH', ref: 'ash', dx: 2, dy: -8 },
-    { abbr: 'FH', ref: 'fh', dx: 6, dy: 8 },
-    { abbr: 'KLC', ref: 'klc', dx: -2, dy: 0 },
-    { abbr: 'PAD', ref: 'pad', dx: 2, dy: 2 },
+    { abbr: 'LIB', ref: 'lib', side: 'left' },
+    { abbr: 'KC', ref: 'kc', side: 'bottom' },
+    { abbr: 'JHZ', ref: 'jhz', side: 'right' },
+    { abbr: 'ASH', ref: 'ash', side: 'top' },
+    { abbr: 'FH', ref: 'fh', side: 'left' },
+    { abbr: 'KLC', ref: 'klc', side: 'left' },
+    { abbr: 'FLC', ref: 'flc', side: 'top' },
+    { abbr: 'PAD', ref: 'pad', side: 'top' },
+    { abbr: 'AH', ref: 'ah', side: 'left' },
   ],
 };

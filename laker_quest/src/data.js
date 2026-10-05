@@ -221,7 +221,7 @@ LQ.NPCS = [
       : ['Don\'t go near the pond unless you\'re ready to scrap with a goose.', 'They hatched here. They think they own the place. Honestly? They might.'] },
   { id: 'st2', map: 'campus', img: [372, 374], look: 'student2', dir: 'down', wander: true,
     talk: () => ['I had a book in my backpack and it just... flew away. Toward the library. It was overdue, I guess.'] },
-  { id: 'st3', map: 'campus', img: [420, 470], look: 'student1', dir: 'down', wander: true,
+  { id: 'st3', map: 'campus', img: [405, 470], look: 'student1', dir: 'down', wander: true,
     talk: () => ['Everybody in south campus housing is up all night. The bells keep ringing at random times.', 'Some of the sophomores have gone feral.'] },
   { id: 'fisher', map: 'campus', img: [560, 114], look: 'groundskeeper', dir: 'right',
     talk: () => ['The Grand River. Flows all the way from Jackson down to Grand Haven and into Lake Michigan.', 'The ravines on campus all drain down here. Lately it\'s been snowing on just this one spot. In September.'] },
