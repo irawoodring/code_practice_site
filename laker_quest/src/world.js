@@ -7,10 +7,10 @@ const T = LQ.T = {
   WATER: 6, TREE: 7, RAVINE: 8, BRIDGE: 9, TURF: 10, FAIRWAY: 11, SAND: 12,
   FARM: 13, PARKING: 14, FLOWERS: 15, BUILDING: 16, DOOR: 17, STANDS: 18,
   DIRT: 19, FLOOR_WOOD: 20, FLOOR_TILE: 21, FLOOR_CARPET: 22, WALL: 23,
-  FURN: 24, EXIT: 25, VOID: 26, FOOTBALL: 27,
+  FURN: 24, EXIT: 25, VOID: 26, FOOTBALL: 27, PILLAR: 28,
 };
 
-LQ.SOLID = new Set([T.WATER, T.TREE, T.RAVINE, T.BUILDING, T.STANDS, T.WALL, T.FURN, T.VOID]);
+LQ.SOLID = new Set([T.WATER, T.TREE, T.RAVINE, T.BUILDING, T.STANDS, T.WALL, T.FURN, T.VOID, T.PILLAR]);
 
 // ------------------------------------------------------------ map object
 LQ.GameMap = class {
@@ -95,7 +95,7 @@ LQ.GameMap = class {
 LQ.MAP_CHARS = {
   '.': T.GRASS, B: T.BUILDING, K: T.BUILDING, R: T.ROAD, W: T.PATH,
   p: T.PARKING, r: T.PARKING, b: T.PARKING, y: T.PARKING, g: T.PARKING, u: T.PARKING, o: T.PARKING, k: T.PARKING,
-  F: T.TURF, Y: T.FOOTBALL, S: T.STANDS, '~': T.WATER, G: T.FAIRWAY, A: T.FARM, T: T.GRASS, V: T.RAVINE, '=': T.BRIDGE, t: T.GRASS, D: T.DIRT,
+  F: T.TURF, Y: T.FOOTBALL, S: T.STANDS, H: T.PILLAR, '~': T.WATER, G: T.FAIRWAY, A: T.FARM, T: T.GRASS, V: T.RAVINE, '=': T.BRIDGE, t: T.GRASS, D: T.DIRT,
 };
 // Parking lot colors match the campus map's permit colors.
 LQ.LOT_COLORS = { r: '#d84850', b: '#3878d0', y: '#e0b828', g: '#40b060', u: '#7050b0', o: '#e88030', k: '#282830' };
@@ -209,6 +209,14 @@ LQ.buildCampus = function () {
   m.carillon = ca;
   m.objects.push({ kind: 'carillon', sortY: (ca.y + ca.h) * 16, sprite: LQ.renderCarillon(), x: ca.x * 16, y: (ca.y + ca.h) * 16 });
 
+  // The Transformational Link arch: you walk under it between its pillars.
+  if (D.arch) {
+    const [ax, ay] = D.arch;
+    m.arch = { name: 'The Transformational Link', x: ax, y: ay };
+    const sprite = LQ.renderArch();
+    m.objects.push({ kind: 'carillon', sortY: (ay + 1) * 16, sprite, x: (ax - 1) * 16, y: (ay + 1) * 16 });
+  }
+
   // Signs, snapped to the nearest open spot off the road.
   for (const sg of C.signs) {
     const [tx, ty] = m.snapOpen(...LQ.imgTile(sg.at[0], sg.at[1]), true);
@@ -233,6 +241,11 @@ LQ.buildCampus = function () {
         return n !== T.GRASS && n !== T.TREE && n !== T.RAVINE && n !== T.WATER && n !== T.FAIRWAY && n !== T.FARM && n !== T.VOID;
       });
       if (crowded && ch !== 'T') continue;
+      const besideWalk = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => {
+        const n = m.get(x + dx, y + dy);
+        return n === T.PATH || n === T.DIRT || n === T.BRIDGE || n === T.ROAD || n === T.PILLAR;
+      });
+      if (besideWalk) continue;
       if (LQ.hash(x, y, 3) < p && (x + y) % 2 === 0) {
         m.set(x, y, T.TREE);
         m.treeRows[y].push({ x, y, v: Math.floor(LQ.hash(x, y, 5) * 3) });
@@ -318,7 +331,7 @@ LQ.drawTile = function (cx, t, x, y, px, py, m) {
       }
       break;
     }
-    case T.PATH: case T.DOOR: {
+    case T.PATH: case T.DOOR: case T.PILLAR: {
       cx.fillStyle = C.path;
       cx.fillRect(px, py, 16, 16);
       cx.fillStyle = C.pathSeam;
@@ -682,6 +695,41 @@ LQ.renderBuilding = function (b) {
   cx.setTransform(1, 0, 0, 1, 0, 0);
   cx.fillStyle = '#181820';
   for (let i = 0; i < edge.length; i += 2) cx.fillRect(edge[i], edge[i + 1], 1, 1);
+  return c;
+};
+
+// The Transformational Link: a tall steel arch over the walkway, drawn
+// 3 tiles wide with its pillars on the outer tiles.
+LQ.renderArch = function () {
+  const W = 48, H = 72;
+  const c = document.createElement('canvas');
+  c.width = W;
+  c.height = H;
+  const cx = c.getContext('2d');
+  const k = '#181820', steel = '#b8c4d8', shine = '#f0f4ff', blue = '#0032a0';
+  // Arc: a thick half-ellipse from pillar to pillar.
+  for (let i = 0; i <= 64; i++) {
+    const a = Math.PI * i / 64;
+    const x = 24 - Math.cos(a) * 18, y = 46 - Math.sin(a) * 38;
+    cx.fillStyle = k; cx.fillRect(Math.round(x) - 4, Math.round(y) - 4, 8, 8);
+  }
+  for (let i = 0; i <= 64; i++) {
+    const a = Math.PI * i / 64;
+    const x = 24 - Math.cos(a) * 18, y = 46 - Math.sin(a) * 38;
+    cx.fillStyle = blue; cx.fillRect(Math.round(x) - 3, Math.round(y) - 3, 6, 6);
+  }
+  for (let i = 4; i <= 60; i++) {
+    const a = Math.PI * i / 64;
+    const x = 24 - Math.cos(a) * 18, y = 46 - Math.sin(a) * 38;
+    cx.fillStyle = shine; cx.fillRect(Math.round(x) - 1, Math.round(y) - 2, 2, 1);
+  }
+  // Pillars.
+  for (const px of [3, 35]) {
+    cx.fillStyle = k; cx.fillRect(px - 1, 40, 12, 32);
+    cx.fillStyle = steel; cx.fillRect(px, 41, 10, 30);
+    cx.fillStyle = shine; cx.fillRect(px + 2, 42, 2, 28);
+    cx.fillStyle = '#8890a8'; cx.fillRect(px, 66, 10, 5);
+  }
   return c;
 };
 

@@ -272,6 +272,8 @@ LQ.Game = class {
       }
       const c = this.map.carillon;
       if (!this.popup && Math.abs(c.x * 16 + 16 - p.x) < 40 && p.y - (c.y + 2) * 16 > -8 && p.y - (c.y + 2) * 16 < 48) this.popup = 'Cook Carillon Tower';
+      const a = this.map.arch;
+      if (!this.popup && a && Math.abs(a.x * 16 + 8 - p.x) < 48 && Math.abs(a.y * 16 + 8 - p.y) < 40) this.popup = a.name;
     }
 
     if (I.hit('ok')) this.interact();
@@ -356,6 +358,7 @@ LQ.Game = class {
       const b = m.buildingAt(tx, ty);
       if (b) { this.say(['@' + b.name + '.']); return true; }
       const t = m.get(tx, ty);
+      if (t === LQ.T.PILLAR) { this.say(['@The Transformational Link. A towering steel arch over the walk to the Little Mac Bridge.', '@Students say walking under it is good luck before an exam.']); return true; }
       if (t === LQ.T.WATER) { this.say(['@The water is cold. Michigan cold.']); return true; }
       if (t === LQ.T.RAVINE) { this.say(['@A steep, wooded ravine. Way too steep to climb down.']); return true; }
     }
@@ -742,7 +745,7 @@ LQ.Game = class {
     const col = {
       [T.GRASS]: '#78c060', [T.TREE]: '#3a8a3a', [T.FLOWERS]: '#78c060', [T.PATH]: '#e0dccc', [T.DOOR]: '#e0dccc',
       [T.ROAD]: '#505060', [T.WATER]: '#4898e8', [T.RAVINE]: '#2a5a2a', [T.BRIDGE]: '#c09060', [T.TURF]: '#40a040',
-      [T.FAIRWAY]: '#90d880', [T.FOOTBALL]: '#2f8a3a', [T.STANDS]: '#9898a8', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448', [T.DIRT]: '#c8a070',
+      [T.FAIRWAY]: '#90d880', [T.FOOTBALL]: '#2f8a3a', [T.STANDS]: '#9898a8', [T.PILLAR]: '#e0dccc', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448', [T.DIRT]: '#c8a070',
     };
     for (let y = 0; y < c.height; y++)
       for (let x = 0; x < c.width; x++) {

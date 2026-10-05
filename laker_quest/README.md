@@ -37,7 +37,7 @@ Save by checking a phone (in Kirkhof, Zumberge, the Fieldhouse, your dorm, and a
 
 ## The campus
 
-The campus map is built from [OpenStreetMap](https://www.openstreetmap.org) data by `tools/osm_to_map.py`. It draws real building footprints, roads, footpaths, parking lots, ponds, streams, the Grand River, woods, sports fields, Lubbers Stadium (field and bleachers) and The Meadows golf course into tiles about 9 meters across. The map covers from just north of Lake Michigan Drive (M-45) south to Luce Street, and from Allendale (around 48th Ave) east across the Grand River. The output is `src/campus_map.js`, 362×303 tiles with 404 buildings, 104 of them named.
+The campus map is built from [OpenStreetMap](https://www.openstreetmap.org) data by `tools/osm_to_map.py`. It draws real building footprints, roads, footpaths, parking lots, ponds, streams, the Grand River, woods, sports fields, Lubbers Stadium (field and bleachers), the Transformational Link arch and The Meadows golf course into tiles about 9 meters across. The map covers from just north of Lake Michigan Drive (M-45) south to Luce Street, and from Allendale (around 48th Ave) east across the Grand River. The output is `src/campus_map.js`, 362×303 tiles with 404 buildings, 104 of them named.
 
 GVSU's official campus map, the image with the A–F / 1–9 grid, is used for two things:
 
