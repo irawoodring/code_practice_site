@@ -214,6 +214,22 @@ def main():
         if s < 4:
             tiles[lab == i] = C['white']
 
+    # Tidy building outlines so they draw cleanly: fill one-tile notches and
+    # trim one-tile spurs left by anti-aliased map edges.
+    B = C['bldg']
+    for _ in range(2):
+        bm = tiles == B
+        p = np.pad(bm, 1)
+        n4 = p[:-2, 1:-1].astype(int) + p[2:, 1:-1] + p[1:-1, :-2] + p[1:-1, 2:]
+        fill = ~bm & (n4 >= 3) & ((tiles == C['white']) | (tiles == C['walk']))
+        tiles[fill] = B
+        bm = tiles == B
+        p = np.pad(bm, 1)
+        n4 = p[:-2, 1:-1].astype(int) + p[2:, 1:-1] + p[1:-1, :-2] + p[1:-1, 2:]
+        lab, _n = ndimage.label(bm)
+        big = ndimage.sum(bm, lab, lab) > 6
+        tiles[bm & (n4 <= 1) & big] = C['white']
+
     grid = [[TILE_CHAR[CLASSES[v]] for v in row] for row in tiles]
 
     def tset(tx, ty, ch, only=None):
@@ -282,6 +298,14 @@ def main():
             for tx in range(W, W2):
                 grid[ty][tx] = 'R'
 
+    # The carillon is drawn as its own object; clear stray building specks
+    # from the map's tiny square and leave a plaza around the tower.
+    ccx, ccy = tile_of(*CARILLON)
+    for ty in range(ccy - 3, ccy + 3):
+        for tx in range(ccx - 3, ccx + 3):
+            if grid[ty][tx] == 'B':
+                grid[ty][tx] = 'W'
+
     # Buildings: connected components, named by label or cluster.
     bmask = np.array([[c == 'B' for c in row] for row in grid])
     lab, n = ndimage.label(bmask)
@@ -315,7 +339,6 @@ def main():
             # list every name.
             pb, pc, pn = named[best]
             named[best] = (pb, pc + '/' + code, pn + ' / ' + name)
-    ccx, ccy = tile_of(*CARILLON)
     objs = ndimage.find_objects(lab)
     cluster_count = {}
     for i, sl in enumerate(objs, start=1):

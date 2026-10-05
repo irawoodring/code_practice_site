@@ -37,7 +37,7 @@ Save by checking a phone (in Kirkhof, Zumberge, the Fieldhouse, your dorm, and a
 
 ## The campus
 
-The campus is traced from GVSU's official Allendale campus map, the version with the A–F / 1–9 grid. `tools/trace_map.py` classifies the map by color into buildings, roads, sidewalks, parking lots (in their permit colors), fields and water. It then turns every 2×2 block of map pixels into one game tile and names each building from the map's labels. The output is `src/campus_map.js`, 214×284 tiles with 154 buildings.
+The campus is traced from GVSU's official Allendale campus map, the version with the A–F / 1–9 grid. `tools/trace_map.py` classifies the map by color into buildings, roads, sidewalks, parking lots (in their permit colors), fields and water. It then turns every 2×2 block of map pixels into one game tile and names each building from the map's labels. The output is `src/campus_map.js`, 214×284 tiles with 143 buildings.
 
 That means building shapes, roads, lots and their positions relative to each other match the map. A few things were added by hand where the map is blank or only schematic:
 

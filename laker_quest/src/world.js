@@ -147,12 +147,13 @@ LQ.buildCampus = function () {
     // Draw in horizontal slices so characters in courtyards sort correctly.
     const sprite = LQ.renderBuilding(b);
     const R = LQ.BUILDING_RISE;
+    // The sprite has a 1px outline border on every side.
     for (let k = 0; k * 16 < sprite.height; k++) {
       const sh = Math.min(16, sprite.height - k * 16);
       m.objects.push({
         kind: 'bslice', sprite, sy: k * 16, sh,
-        x: b.x * 16, y: b.y * 16 - R + k * 16, w: sprite.width,
-        sortY: (b.y + Math.min(k, h - 1) + 1) * 16,
+        x: b.x * 16 - 1, y: b.y * 16 - R - 1 + k * 16, w: sprite.width,
+        sortY: (b.y + LQ.clamp(k, 0, h - 1) + 1) * 16,
       });
     }
   }
@@ -491,9 +492,10 @@ LQ.BUILDING_STYLES = {
 };
 LQ.BUILDING_RISE = 14;   // pixels the roof rises above the footprint (oblique view)
 
-// Draws a building of any traced shape in Earthbound's oblique view: roof
-// tiles seen from above, and the south-facing walls of each column shown as
-// a facade with windows.
+// Draws a building of any traced shape in Earthbound's oblique view. Each
+// column of the footprint is split into a south-facing wall (its bottom one
+// or two tiles) and a roof above it. The roof is shifted up by RISE pixels,
+// so every column has a visible roof, even a building one tile deep.
 LQ.renderBuilding = function (b) {
   const S = Object.assign({}, LQ.BUILDING_STYLES[b.style] || LQ.BUILDING_STYLES.brick);
   if (b.style === 'brick' || b.style === 'stone') {
@@ -505,82 +507,105 @@ LQ.renderBuilding = function (b) {
   const R = LQ.BUILDING_RISE;
   const W = b.w * 16, H = b.h * 16 + R;
   const c = document.createElement('canvas');
-  c.width = W;
-  c.height = H;
+  c.width = W + 2;
+  c.height = H + 2;
   const cx = c.getContext('2d');
+  cx.translate(1, 1);   // room for the outline
   const has = b.has;
-  // Facade depth: how many tiles of each column's south end are wall.
-  const depth = LQ.clamp(Math.round(Math.min(b.w, b.h) / 3), 1, 3);
-  const wallRows = (x, y) => { let d = 0; while (has(x, y + d)) d++; return d; };   // tiles to the south edge
-  const isFace = (x, y) => has(x, y) && wallRows(x, y) <= depth;
-  const k = '#181820';
+  // Wall height is the same for the whole building so the facade lines up.
+  const wallT = Math.min(b.w, b.h) >= 6 ? 2 : 1;
+  const wallAt = new Set();   // "x,y" of wall tiles
+  const runs = [];
+  for (let x = 0; x < b.w; x++)
+    for (let y = 0; y < b.h; y++) {
+      if (!has(x, y) || has(x, y - 1)) continue;
+      let y1 = y;
+      while (has(x, y1 + 1)) y1++;
+      const wt = Math.min(wallT, y1 - y + 1);
+      for (let k = 0; k < wt; k++) wallAt.add(x + ',' + (y1 - k));
+      runs.push({ x, y0: y, y1, wt });
+    }
+  const isWall = (x, y) => wallAt.has(x + ',' + y);
 
-  // Outline pass, then fill pass (roof shifted up by R, facades stretched to meet it).
-  for (const pass of [0, 1]) {
-    for (let y = 0; y < b.h; y++)
-      for (let x = 0; x < b.w; x++) {
-        if (!has(x, y)) continue;
-        const px = x * 16, top = y * 16, face = isFace(x, y);
-        // Canvas row 0 is R pixels above the footprint.
-        const y0 = top, y1 = top + 16 + (face ? R : 0);
-        if (pass === 0) {
-          cx.fillStyle = k;
-          cx.fillRect(px, y0, 16, y1 - y0);
-          continue;
-        }
-        const l = has(x - 1, y) ? 0 : 1, r = has(x + 1, y) ? 0 : 1, t = has(x, y - 1) ? 0 : 1;
-        if (!face) {
-          cx.fillStyle = S.roof;
-          cx.fillRect(px + l, y0 + t, 16 - l - r, 16 - t);
-          cx.fillStyle = S.roof2;
-          if ((y + b.y) % 2 === 0) cx.fillRect(px + l, y0 + 8, 16 - l - r, 1);
-          if (isFace(x, y + 1)) { cx.fillRect(px + l, y0 + 13, 16 - l - r, 3); }
-          if (S.glassy && LQ.hash(x + b.x, y + b.y, 4) < 0.5) { cx.fillStyle = '#a8d8f8'; cx.fillRect(px + 3, y0 + 3, 10, 8); }
-          else if (LQ.hash(x + b.x, y + b.y, 2) < 0.06) {
-            cx.fillStyle = k; cx.fillRect(px + 3, y0 + 3, 10, 8);
-            cx.fillStyle = '#c0c0c8'; cx.fillRect(px + 4, y0 + 4, 8, 6);
-          }
-        } else {
-          const bottom = !has(x, y + 1);
-          const firstFace = !isFace(x, y - 1);
-          const fy0 = firstFace ? y0 + (has(x, y - 1) ? 0 : t) : y0 + R;
-          const fy1 = top + 16 + R - (bottom ? 1 : 0);
-          cx.fillStyle = S.wall;
-          cx.fillRect(px + l, fy0, 16 - l - r, fy1 - fy0);
-          if (b.style === 'brick') {
-            cx.fillStyle = S.wall2;
-            for (let yy = fy0 + 2; yy < fy1; yy += 3) for (let xx = px + l + (((yy / 3) | 0) % 2) * 3; xx < px + 16 - r; xx += 6) cx.fillRect(xx, yy, 3, 1);
-          }
-          if (firstFace) {
-            cx.fillStyle = S.trim;
-            cx.fillRect(px + l, fy0, 16 - l - r, 2);
-            if (S.band) { cx.fillStyle = '#0032a0'; cx.fillRect(px + l, fy0 + 3, 16 - l - r, 2); }
-            if (S.awning) for (let xx = px; xx < px + 16; xx += 4) { cx.fillStyle = (xx / 4) % 2 ? '#f8f8f8' : '#e04848'; cx.fillRect(xx, fy0 + 2, 4, 4); }
-          }
-          // Window (doors drawn below).
-          const isDoor = b.door && b.door[0] === b.x + x && b.door[1] === b.y + y;
-          if (!isDoor) {
-            const wy = top + R + 4;
-            if (S.glassy) {
-              cx.fillStyle = '#304860'; cx.fillRect(px + l, wy - 1, 16 - l - r, 11);
-              cx.fillStyle = S.win; cx.fillRect(px + l, wy, 16 - l - r, 9);
-              cx.fillStyle = '#f8ffff'; cx.fillRect(px + 3, wy + 1, 2, 4);
-            } else {
-              cx.fillStyle = '#283040'; cx.fillRect(px + 3, wy - 1, 10, 11);
-              cx.fillStyle = S.win; cx.fillRect(px + 4, wy, 8, 9);
-              cx.fillStyle = '#f8ffff'; cx.fillRect(px + 5, wy + 1, 2, 3);
-              cx.fillStyle = '#283040'; cx.fillRect(px + 4, wy + 4, 8, 1);
-            }
-          } else {
-            const dx = px + 2, dy = top + R + 16;
-            cx.fillStyle = k; cx.fillRect(dx - 1, dy - 15, 14, 15);
-            cx.fillStyle = b.interior ? '#5a3a28' : '#584848'; cx.fillRect(dx, dy - 14, 12, 14);
-            cx.fillStyle = b.interior ? '#a8d8f8' : '#7a6a6a'; cx.fillRect(dx + 2, dy - 12, 8, 5);
-            cx.fillStyle = '#f8d040'; cx.fillRect(dx + 9, dy - 6, 2, 2);
-          }
-        }
+  // Canvas y of a footprint row's top edge is row*16 + R.
+  for (const { x, y0, y1, wt } of runs) {
+    const px = x * 16;
+    // Roof: from R above the run's top down to where the wall starts.
+    const roofTop = y0 * 16, roofBot = (y1 + 1 - wt) * 16 + R;
+    cx.fillStyle = S.roof;
+    cx.fillRect(px, roofTop, 16, roofBot - roofTop);
+    cx.fillStyle = S.roof2;
+    for (let yy = roofTop + 6; yy < roofBot - 4; yy += 8) cx.fillRect(px, yy, 16, 1);
+    cx.fillRect(px, roofBot - 3, 16, 3);   // roof lip above the wall
+    if (S.glassy && roofBot - roofTop >= 20) { cx.fillStyle = '#a8d8f8'; cx.fillRect(px + 3, roofTop + 4, 10, Math.min(10, roofBot - roofTop - 12)); }
+    for (let ty = y0; ty <= y1 - wt; ty++) {
+      if (LQ.hash(x + b.x, ty + b.y, 2) < 0.07 && has(x - 1, ty) && has(x + 1, ty) && has(x, ty - 1)) {
+        const vy = ty * 16 + 3;
+        cx.fillStyle = '#181820'; cx.fillRect(px + 3, vy, 10, 8);
+        cx.fillStyle = '#c0c0c8'; cx.fillRect(px + 4, vy + 1, 8, 6);
       }
+    }
+    // Wall: the bottom wt tiles of the run.
+    const wallTop = roofBot, wallBot = (y1 + 1) * 16 + R;
+    cx.fillStyle = S.wall;
+    cx.fillRect(px, wallTop, 16, wallBot - wallTop);
+    if (b.style === 'brick') {
+      cx.fillStyle = S.wall2;
+      for (let yy = wallTop + 3; yy < wallBot - 1; yy += 3) for (let xx = px + ((yy / 3) | 0) % 2 * 3; xx < px + 16; xx += 6) cx.fillRect(xx, yy, Math.min(3, px + 16 - xx), 1);
+    }
+    cx.fillStyle = S.trim;
+    cx.fillRect(px, wallTop, 16, 2);
+    if (S.band) { cx.fillStyle = '#0032a0'; cx.fillRect(px, wallTop + 3, 16, 2); }
+    if (S.awning) for (let xx = px; xx < px + 16; xx += 4) { cx.fillStyle = (xx / 4) % 2 ? '#f8f8f8' : '#e04848'; cx.fillRect(xx, wallTop + 2, 4, 4); }
+    // Edges where a neighboring column's wall sits at a different height.
+    cx.fillStyle = '#181820';
+    for (let ty = y1 + 1 - wt; ty <= y1; ty++) {
+      const yy = ty * 16 + R;
+      if (!isWall(x - 1, ty)) cx.fillRect(px, yy, 1, 16);
+      if (!isWall(x + 1, ty)) cx.fillRect(px + 15, yy, 1, 16);
+    }
+    // Roof beside a neighbor's wall: draw the seam between them.
+    for (let ty = y0; ty <= y1 - wt; ty++) {
+      if (isWall(x - 1, ty)) cx.fillRect(px, ty * 16 + R, 1, 16);
+      if (isWall(x + 1, ty)) cx.fillRect(px + 15, ty * 16 + R, 1, 16);
+    }
+    // Windows and the door, one per wall tile.
+    for (let ty = y1 + 1 - wt; ty <= y1; ty++) {
+      const top = ty * 16 + R;
+      const isDoor = b.door && b.door[0] === b.x + x && b.door[1] === b.y + ty;
+      if (isDoor) {
+        const dx = px + 2, dy = top + 16;
+        cx.fillStyle = '#181820'; cx.fillRect(dx - 1, dy - 13, 14, 13);
+        cx.fillStyle = b.interior ? '#5a3a28' : '#584848'; cx.fillRect(dx, dy - 12, 12, 12);
+        cx.fillStyle = b.interior ? '#a8d8f8' : '#7a6a6a'; cx.fillRect(dx + 2, dy - 10, 8, 4);
+        cx.fillStyle = '#f8d040'; cx.fillRect(dx + 9, dy - 5, 2, 2);
+        continue;
+      }
+      const wy = top + 4;
+      if (S.glassy) {
+        cx.fillStyle = '#304860'; cx.fillRect(px + 1, wy - 1, 14, 10);
+        cx.fillStyle = S.win; cx.fillRect(px + 2, wy, 12, 8);
+        cx.fillStyle = '#f8ffff'; cx.fillRect(px + 3, wy + 1, 2, 3);
+      } else {
+        cx.fillStyle = '#283040'; cx.fillRect(px + 3, wy - 1, 10, 10);
+        cx.fillStyle = S.win; cx.fillRect(px + 4, wy, 8, 8);
+        cx.fillStyle = '#f8ffff'; cx.fillRect(px + 5, wy + 1, 2, 3);
+        cx.fillStyle = '#283040'; cx.fillRect(px + 4, wy + 4, 8, 1);
+      }
+    }
   }
+
+  // Black outline around the whole silhouette.
+  const img = cx.getImageData(0, 0, c.width, c.height);
+  const d = img.data, cw = c.width, chh = c.height;
+  const solid = (x, y) => x >= 0 && y >= 0 && x < cw && y < chh && d[(y * cw + x) * 4 + 3] > 0;
+  const edge = [];
+  for (let y = 0; y < chh; y++)
+    for (let x = 0; x < cw; x++)
+      if (solid(x, y) && (!solid(x - 1, y) || !solid(x + 1, y) || !solid(x, y - 1) || !solid(x, y + 1))) edge.push(x, y);
+  cx.setTransform(1, 0, 0, 1, 0, 0);
+  cx.fillStyle = '#181820';
+  for (let i = 0; i < edge.length; i += 2) cx.fillRect(edge[i], edge[i + 1], 1, 1);
   return c;
 };
 
