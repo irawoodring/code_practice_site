@@ -742,7 +742,7 @@ LQ.Game = class {
     const col = {
       [T.GRASS]: '#78c060', [T.TREE]: '#3a8a3a', [T.FLOWERS]: '#78c060', [T.PATH]: '#e0dccc', [T.DOOR]: '#e0dccc',
       [T.ROAD]: '#505060', [T.WATER]: '#4898e8', [T.RAVINE]: '#2a5a2a', [T.BRIDGE]: '#c09060', [T.TURF]: '#40a040',
-      [T.FAIRWAY]: '#90d880', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448', [T.DIRT]: '#c8a070',
+      [T.FAIRWAY]: '#90d880', [T.FOOTBALL]: '#2f8a3a', [T.STANDS]: '#9898a8', [T.FARM]: '#a07848', [T.PARKING]: '#8a8a94', [T.BUILDING]: '#283448', [T.DIRT]: '#c8a070',
     };
     for (let y = 0; y < c.height; y++)
       for (let x = 0; x < c.width; x++) {

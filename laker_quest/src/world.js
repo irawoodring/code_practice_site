@@ -7,7 +7,7 @@ const T = LQ.T = {
   WATER: 6, TREE: 7, RAVINE: 8, BRIDGE: 9, TURF: 10, FAIRWAY: 11, SAND: 12,
   FARM: 13, PARKING: 14, FLOWERS: 15, BUILDING: 16, DOOR: 17, STANDS: 18,
   DIRT: 19, FLOOR_WOOD: 20, FLOOR_TILE: 21, FLOOR_CARPET: 22, WALL: 23,
-  FURN: 24, EXIT: 25, VOID: 26,
+  FURN: 24, EXIT: 25, VOID: 26, FOOTBALL: 27,
 };
 
 LQ.SOLID = new Set([T.WATER, T.TREE, T.RAVINE, T.BUILDING, T.STANDS, T.WALL, T.FURN, T.VOID]);
@@ -95,7 +95,7 @@ LQ.GameMap = class {
 LQ.MAP_CHARS = {
   '.': T.GRASS, B: T.BUILDING, K: T.BUILDING, R: T.ROAD, W: T.PATH,
   p: T.PARKING, r: T.PARKING, b: T.PARKING, y: T.PARKING, g: T.PARKING, u: T.PARKING, o: T.PARKING, k: T.PARKING,
-  F: T.TURF, '~': T.WATER, G: T.FAIRWAY, A: T.FARM, T: T.GRASS, V: T.RAVINE, '=': T.BRIDGE, t: T.GRASS, D: T.DIRT,
+  F: T.TURF, Y: T.FOOTBALL, S: T.STANDS, '~': T.WATER, G: T.FAIRWAY, A: T.FARM, T: T.GRASS, V: T.RAVINE, '=': T.BRIDGE, t: T.GRASS, D: T.DIRT,
 };
 // Parking lot colors match the campus map's permit colors.
 LQ.LOT_COLORS = { r: '#d84850', b: '#3878d0', y: '#e0b828', g: '#40b060', u: '#7050b0', o: '#e88030', k: '#282830' };
@@ -272,7 +272,7 @@ LQ.TILE_COLORS = {
   pathSeam: '#b8b4a8',
   brick: '#c87860',
   brickSeam: '#a05848',
-  road: '#686874',
+  road: '#585862',
   roadSpeck: '#5a5a66',
   line: '#f0d050',
   water: '#4898e8',
@@ -285,7 +285,7 @@ LQ.TILE_COLORS = {
   fairway: ['#7cd068', '#88dc74'],
   sand: '#f0e0a0',
   farm: ['#a07848', '#886038'],
-  parking: '#78787f',
+  parking: '#8a8a94',
   dirt: '#c8a070',
   stands: '#9898a8',
 };
@@ -325,6 +325,13 @@ LQ.drawTile = function (cx, t, x, y, px, py, m) {
       if (x % 2 === 0) cx.fillRect(px, py, 1, 16);
       if (y % 2 === 0) cx.fillRect(px, py, 16, 1);
       dots('#c8c4b8', 2, 6);
+      // Darker curb edge against roads and lots.
+      const hard = (dx, dy) => { const n = m.get(x + dx, y + dy); return n === T.ROAD || n === T.PARKING; };
+      cx.fillStyle = '#9a968c';
+      if (hard(0, -1)) cx.fillRect(px, py, 16, 2);
+      if (hard(0, 1)) cx.fillRect(px, py + 14, 16, 2);
+      if (hard(-1, 0)) cx.fillRect(px, py, 2, 16);
+      if (hard(1, 0)) cx.fillRect(px + 14, py, 2, 16);
       break;
     }
     case T.BRICK: {
@@ -343,6 +350,15 @@ LQ.drawTile = function (cx, t, x, y, px, py, m) {
       cx.fillStyle = C.road;
       cx.fillRect(px, py, 16, 16);
       dots(C.roadSpeck, 6, 8);
+      // Light curb where the road meets anything that isn't road or lot.
+      if (m.id === 'campus') {
+        const curb = (dx, dy) => { const n = m.get(x + dx, y + dy); return n !== T.ROAD && n !== T.PARKING && n !== T.BRIDGE && n !== T.VOID && n !== T.WATER; };
+        cx.fillStyle = '#c8c8c8';
+        if (curb(0, -1)) cx.fillRect(px, py, 16, 1);
+        if (curb(0, 1)) cx.fillRect(px, py + 15, 16, 1);
+        if (curb(-1, 0)) cx.fillRect(px, py, 1, 16);
+        if (curb(1, 0)) cx.fillRect(px + 15, py, 1, 16);
+      }
       cx.fillStyle = C.line;
       if (t === T.ROAD_LINE_H && x % 2 === 0) cx.fillRect(px + 2, py + 15, 12, 2);
       if (t === T.ROAD_LINE_V && y % 2 === 0) cx.fillRect(px + 15, py + 2, 2, 12);
@@ -412,21 +428,40 @@ LQ.drawTile = function (cx, t, x, y, px, py, m) {
       break;
     }
     case T.PARKING: {
+      // Lighter than roads, in rows of stalls with an aisle every third row.
       cx.fillStyle = C.parking;
       cx.fillRect(px, py, 16, 16);
-      dots(C.roadSpeck, 4, 13);
+      dots(C.roadSpeck, 3, 13);
       cx.fillStyle = '#e8e8e8';
-      if (x % 2 === 0 && y % 4 !== 3) cx.fillRect(px, py, 1, 16);
-      // Curb painted in the lot's permit color (as on the campus map).
+      const row = y % 3;
+      if (row === 0) { for (const lx of [0, 8]) cx.fillRect(px + lx, py + 4, 1, 12); }
+      if (row === 1) { for (const lx of [0, 8]) cx.fillRect(px + lx, py, 1, 12); }
+      // Curb in the lot's permit color where it meets grass or sidewalk
+      // (openings onto roads stay open).
       const lot = m.lotColor && m.lotColor.get(y * m.w + x);
-      if (lot) {
-        cx.fillStyle = lot;
-        const edge = (dx, dy) => m.get(x + dx, y + dy) !== T.PARKING;
-        if (edge(0, -1)) cx.fillRect(px, py, 16, 3);
-        if (edge(0, 1)) cx.fillRect(px, py + 13, 16, 3);
-        if (edge(-1, 0)) cx.fillRect(px, py, 3, 16);
-        if (edge(1, 0)) cx.fillRect(px + 13, py, 3, 16);
-      }
+      cx.fillStyle = lot || '#b8b8c0';
+      const edge = (dx, dy) => { const n = m.get(x + dx, y + dy); return n !== T.PARKING && n !== T.ROAD && n !== T.VOID; };
+      if (edge(0, -1)) cx.fillRect(px, py, 16, 2);
+      if (edge(0, 1)) cx.fillRect(px, py + 14, 16, 2);
+      if (edge(-1, 0)) cx.fillRect(px, py, 2, 16);
+      if (edge(1, 0)) cx.fillRect(px + 14, py, 2, 16);
+      break;
+    }
+    case T.FOOTBALL: {
+      // One tile is about ten yards: a yard line on every tile, end zones in
+      // Laker blue, white sidelines.
+      const inF = (dx, dy) => m.get(x + dx, y + dy) === T.FOOTBALL;
+      const endZone = !inF(0, -1) || !inF(0, 1);
+      cx.fillStyle = endZone ? '#2050b0' : (y % 2 ? '#3c9a44' : '#46a84e');
+      cx.fillRect(px, py, 16, 16);
+      cx.fillStyle = '#f8f8f8';
+      if (!endZone) {
+        cx.fillRect(px, py, 16, 1);
+        for (const hx of [5, 10]) cx.fillRect(px + hx, py + 7, 1, 2);   // hash marks
+      } else if (inF(0, 1)) cx.fillRect(px, py + 15, 16, 1);
+      else cx.fillRect(px, py, 16, 1);
+      if (!inF(-1, 0)) cx.fillRect(px, py, 2, 16);
+      if (!inF(1, 0)) cx.fillRect(px + 14, py, 2, 16);
       break;
     }
     case T.DIRT: {
