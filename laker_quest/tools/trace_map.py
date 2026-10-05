@@ -119,6 +119,12 @@ CLUSTERS = [
 # Cook Carillon Tower: a tiny square on the map, placed as a special object.
 CARILLON = (377, 332)
 
+# Real standing water on the map. Light blue elsewhere is the anti-aliased
+# edge of blue (faculty/staff) lots or bus-stop icons, not water.
+WATER_KEEP = [
+    (388, 334, 418, 364),   # Zumberge Pond
+]
+
 # The ravine creek (blue line) and the Little Mac Bridge across it.
 CREEK = [(560, 240), (545, 244), (529, 246), (519, 252), (513, 263), (511, 269), (491, 270),
          (483, 273), (470, 277), (460, 280), (452, 283), (443, 286), (432, 290), (422, 296), (415, 305)]
@@ -208,6 +214,14 @@ def main():
     for name, need in [('walk', 1), ('field', 2), ('red', 2), ('blue', 2), ('yellow', 2), ('green', 2),
                        ('purple', 2), ('orange', 2), ('road', 2), ('water', 2), ('bldg', 2), ('black', 3)]:
         tiles[counts[C[name]] >= need] = C[name]
+
+    # Keep only water inside the known water areas.
+    lab, n = ndimage.label(tiles == C['water'])
+    for i, (ys, xs) in enumerate(ndimage.find_objects(lab), start=1):
+        cx = x0 + (xs.start + xs.stop) / 2 * SCALE
+        cy = y0 + (ys.start + ys.stop) / 2 * SCALE
+        if not any(a <= cx < c2 and b <= cy < d for a, b, c2, d in WATER_KEEP):
+            tiles[lab == i] = C['white']
 
     # Remove specks: tiny building blobs (label text) and tiny road blobs.
     def tile_of(x, y):
