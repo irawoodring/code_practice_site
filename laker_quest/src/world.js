@@ -100,6 +100,46 @@ LQ.MAP_CHARS = {
 // Parking lot colors match the campus map's permit colors.
 LQ.LOT_COLORS = { r: '#d84850', b: '#3878d0', y: '#e0b828', g: '#40b060', u: '#7050b0', o: '#e88030', k: '#282830' };
 
+// Buildings are the connected groups of 'B' tiles in the map rows. Names
+// come from CAMPUS_MAP.buildings: an entry names the group containing its
+// `at` tile (several entries on one group are joined with " / ").
+LQ.findBuildings = function (D) {
+  const W = D.width, H = D.height;
+  const seen = new Uint8Array(W * H);
+  const isB = (x, y) => x >= 0 && y >= 0 && x < W && y < H && D.rows[y][x] === 'B';
+  const named = new Map();   // "x,y" -> entry
+  for (const e of D.buildings) named.set(e.at[0] + ',' + e.at[1], e);
+  const out = [];
+  for (let y0 = 0; y0 < H; y0++)
+    for (let x0 = 0; x0 < W; x0++) {
+      if (!isB(x0, y0) || seen[y0 * W + x0]) continue;
+      const cells = new Set(), stack = [[x0, y0]];
+      seen[y0 * W + x0] = 1;
+      let minX = x0, maxX = x0, minY = y0, maxY = y0;
+      const entries = [];
+      while (stack.length) {
+        const [x, y] = stack.pop();
+        const key = x + ',' + y;
+        cells.add(key);
+        if (named.has(key)) entries.push(named.get(key));
+        minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+          const nx = x + dx, ny = y + dy;
+          if (isB(nx, ny) && !seen[ny * W + nx]) { seen[ny * W + nx] = 1; stack.push([nx, ny]); }
+        }
+      }
+      entries.sort((a, b) => D.buildings.indexOf(a) - D.buildings.indexOf(b));
+      out.push({
+        id: entries.length ? entries[0].id : 'b' + out.length,
+        code: entries.map((e) => e.code).filter(Boolean).join('/'),
+        name: entries.length ? entries.map((e) => e.name).join(' / ') : 'Campus building',
+        x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1, cells,
+      });
+    }
+  return out;
+};
+
 LQ.buildCampus = function () {
   const D = LQ.CAMPUS_MAP, C = LQ.CAMPUS;
   const m = new LQ.GameMap('campus', D.width, D.height, T.GRASS);
@@ -116,9 +156,9 @@ LQ.buildCampus = function () {
   // Buildings with their traced shapes.
   const walkable = (t) => !LQ.SOLID.has(t) && t !== T.DOOR;
   m.buildings = [];
-  for (const src of D.buildings) {
-    const w = src.mask[0].length, h = src.mask.length;
-    const has = (x, y) => y >= 0 && y < h && x >= 0 && x < w && src.mask[y][x] === '#';
+  for (const src of LQ.findBuildings(D)) {
+    const w = src.w, h = src.h;
+    const has = (x, y) => src.cells.has((src.x + x) + ',' + (src.y + y));
     const interior = C.interiors[src.id] || null;
     const style = C.styles[src.id] || 'brick';
     // Door: a south-facing edge near the middle, preferring sidewalks.
