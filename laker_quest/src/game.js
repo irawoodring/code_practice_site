@@ -72,7 +72,7 @@ LQ.Game = class {
     this.pl = { x: spot.x, y: spot.y, dir: spot.dir || 'down', frame: 0, anim: 0, moving: false };
     this.npcs = LQ.NPCS.filter((n) => n.map === id).map((n) => {
       // Campus NPCs are placed by campus-map image coordinates.
-      const [tx, ty] = n.img ? m.snapOpen(...LQ.imgTile(n.img[0], n.img[1])) : [n.x, n.y];
+      const [tx, ty] = n.img ? m.snapOpen(...LQ.imgTile(n.img[0], n.img[1])) : n.tile ? m.snapOpen(...n.tile) : [n.x, n.y];
       const x = tx * 16 + 8, y = ty * 16 + 14;
       return {
         def: n, x, y, homeX: x, homeY: y,
@@ -254,6 +254,8 @@ LQ.Game = class {
       p.anim = 0;
     }
 
+    if (p.moving) this.checkPickups();
+
     // Doors, exits.
     const tx = Math.floor(p.x / 16), ty = Math.floor((p.y - 3) / 16);
     const t = this.map.get(tx, ty);
@@ -396,8 +398,133 @@ LQ.Game = class {
     const p = this.pl;
     const dx = p.x - npc.x, dy = p.y - npc.y;
     npc.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'left' : 'right') : (dy < 0 ? 'up' : 'down');
-    const lines = npc.def.talk(this);
+    const lines = this.questTalk(npc.def.id) || npc.def.talk(this);
     if (lines) this.say(lines, null, npc.def.name);
+  }
+
+  // ======================================================== quests
+  questState(id) {
+    this.flags.quests = this.flags.quests || {};
+    return this.flags.quests[id] || {};
+  }
+
+  // A quest giver's quest dialogue, if one of their quests has something to say.
+  questTalk(npcId) {
+    for (const q of LQ.QUESTS) {
+      if (q.giver !== npcId) continue;
+      const st = this.questState(q.id);
+      if (st.step === 'done') continue;
+      if (st.step === undefined && q.available && !q.available(this)) continue;
+      const lines = q.talk(this, st);
+      if (lines) return lines;
+    }
+    return null;
+  }
+
+  startQuest(id) {
+    this.flags.kills = this.flags.kills || {};
+    this.flags.quests = this.flags.quests || {};
+    this.flags.quests[id] = { step: 0, base: Object.assign({}, this.flags.kills) };
+    LQ.Sound.select();
+  }
+
+  setQuestStep(id, step) { this.questState(id); this.flags.quests[id] = Object.assign({}, this.flags.quests[id], { step }); }
+
+  questKills(id, type) {
+    const base = (this.questState(id).base || {})[type] || 0;
+    return ((this.flags.kills || {})[type] || 0) - base;
+  }
+
+  onEnemyDefeated(type) {
+    this.flags.kills = this.flags.kills || {};
+    this.flags.kills[type] = (this.flags.kills[type] || 0) + 1;
+  }
+
+  // Pays a quest's reward. Returns narration lines (level-ups included).
+  completeQuest(id) {
+    const q = LQ.QUESTS.find((qq) => qq.id === id);
+    this.setQuestStep(id, 'done');
+    const p = this.player, r = q.reward || {}, lines = ['@(Quest complete: ' + q.title + ')'];
+    if (r.exp) { p.exp += r.exp; lines.push('@' + p.name + ' gained ' + r.exp + ' exp. points.'); }
+    if (r.money) { p.money += r.money; lines.push('@' + p.name + ' received $' + r.money + '.'); }
+    for (const it of r.items || []) { p.goods.push(it); lines.push('@' + p.name + ' received the ' + LQ.ITEMS[it].name + '!'); }
+    for (const l of LQ.levelUps(p)) {
+      if (typeof l === 'function') l(); else lines.push('@' + l);
+    }
+    LQ.Sound.win();
+    return lines;
+  }
+
+  takeItem(id) {
+    const i = this.player.goods.indexOf(id);
+    if (i >= 0) { this.unequip(id); this.player.goods.splice(i, 1); }
+  }
+
+  // Where a pickup sits on the campus map, in tiles.
+  pickupTile(pk) {
+    const m = this.getMap('campus');
+    if (pk.tileCache) return pk.tileCache;
+    let t = null;
+    if (pk.at === 'arch' && m.arch) t = m.snapOpen(m.arch.x, m.arch.y + 2);
+    else if (pk.at === 'football') {
+      let sx = 0, sy = 0, n = 0;
+      for (let y = 0; y < m.h; y++) for (let x = 0; x < m.w; x++) if (m.get(x, y) === LQ.T.FOOTBALL) { sx += x; sy += y; n++; }
+      if (n) t = [Math.round(sx / n), Math.round(sy / n)];
+    } else if (pk.at && pk.at.img) t = m.snapOpen(...LQ.imgTile(...pk.at.img));
+    else if (pk.at && pk.at.tile) t = m.snapOpen(...pk.at.tile);
+    pk.tileCache = t;
+    return t;
+  }
+
+  visiblePickups() {
+    if (this.map.id !== 'campus') return [];
+    const got = this.flags.pickedUp || {};
+    return LQ.PICKUPS.filter((pk) => !got[pk.id] && this.questState(pk.quest).step === pk.step && this.pickupTile(pk));
+  }
+
+  checkPickups() {
+    const tx = Math.floor(this.pl.x / 16), ty = Math.floor((this.pl.y - 3) / 16);
+    for (const pk of this.visiblePickups()) {
+      const [px, py] = this.pickupTile(pk);
+      if (px === tx && py === ty) {
+        this.flags.pickedUp = this.flags.pickedUp || {};
+        this.flags.pickedUp[pk.id] = true;
+        this.giveItem(pk.item);
+        this.setQuestStep(pk.quest, pk.step + 1);
+        LQ.Sound.select();
+        this.say(['@' + pk.text, '@' + this.player.name + ' got the ' + LQ.ITEMS[pk.item].name + '!']);
+        return;
+      }
+    }
+  }
+
+  drawQuestLog(ctx) {
+    LQ.drawWindow(ctx, 8, 8, 240, 208);
+    LQ.drawText(ctx, 'Quests', 22, 16, LQ.COLORS.highlight);
+    const started = LQ.QUESTS.filter((q) => this.questState(q.id).step !== undefined);
+    if (!started.length) {
+      LQ.drawText(ctx, 'No side quests yet. Talk to people!', 22, 36, LQ.COLORS.textDim);
+      return;
+    }
+    let y = 32;
+    const active = started.filter((q) => this.questState(q.id).step !== 'done');
+    const done = started.filter((q) => this.questState(q.id).step === 'done');
+    for (const q of active) {
+      const st = this.questState(q.id);
+      LQ.drawText(ctx, q.title, 22, y, LQ.COLORS.text);
+      y += 11;
+      for (const line of LQ.wrapText(q.goal[Math.min(st.step, q.goal.length - 1)], 210)) {
+        LQ.drawText(ctx, line, 30, y, LQ.COLORS.textDim);
+        y += 11;
+      }
+      y += 3;
+      if (y > 190) break;
+    }
+    for (const q of done) {
+      if (y > 200) break;
+      LQ.drawText(ctx, '* ' + q.title + ' (done)', 22, y, LQ.COLORS.textDim);
+      y += 11;
+    }
   }
 
   // Helpers for NPC scripts.
@@ -516,7 +643,7 @@ LQ.Game = class {
     };
     switch (m.kind) {
       case 'main': {
-        const opts = ['Goods', 'PSI', 'Status', 'Map'];
+        const opts = ['Goods', 'PSI', 'Quests', 'Status', 'Map'];
         nav(opts.length);
         if (I.hit('cancel') || I.hit('menu')) { this.menu = null; LQ.Sound.cancel(); return; }
         if (I.hit('ok')) {
@@ -525,6 +652,7 @@ LQ.Game = class {
           if (o === 'Goods' && p.goods.length) this.menu = { kind: 'goods', cursor: 0, parent: m };
           if (o === 'PSI' && p.psi.length) this.menu = { kind: 'psi', cursor: 0, parent: m };
           if (o === 'Status') this.menu = { kind: 'status', parent: m };
+          if (o === 'Quests') this.menu = { kind: 'quests', parent: m };
           if (o === 'Map') this.menu = { kind: 'map', parent: m };
         }
         break;
@@ -576,6 +704,7 @@ LQ.Game = class {
         break;
       }
       case 'status':
+      case 'quests':
         if (I.hit('cancel') || I.hit('ok') || I.hit('map') || I.hit('menu')) { this.menu = m.parent || null; LQ.Sound.cancel(); }
         break;
       case 'map': {
@@ -654,7 +783,7 @@ LQ.Game = class {
       LQ.drawText(ctx, s, 240 - LQ.textWidth(s) - 4, 15, LQ.COLORS.text);
     };
     const drawMain = () => {
-      listWindow(['Goods', 'PSI', 'Status', 'Map'], m.kind === 'main' ? m.cursor : -1, 8, 8, 72, (s) => s);
+      listWindow(['Goods', 'PSI', 'Quests', 'Status', 'Map'], m.kind === 'main' ? m.cursor : -1, 8, 8, 72, (s) => s);
       moneyBox();
       this.drawMiniStatus(ctx);
     };
@@ -681,6 +810,7 @@ LQ.Game = class {
         listWindow(p.psi, m.cursor, 84, 8, 150, (id) => LQ.PSI[id].name, (id) => LQ.PSI[id].pp + 'PP');
         break;
       case 'status': this.drawStatusScreen(ctx); break;
+      case 'quests': this.drawQuestLog(ctx); break;
       case 'map': this.drawMapScreen(ctx); break;
       case 'shop': {
         const items = m.stock.concat(['__done']);
@@ -1106,6 +1236,12 @@ LQ.Game = class {
       const fr = [0, 1, 0, 2][p.frame];
       const spr = this.playerSprites[p.dir][fr];
       draws.push({ y: p.y + 0.1, fn: () => { shadow(p.x, p.y); ctx.drawImage(spr, Math.round(p.x - 8 - camX), Math.round(p.y - 24 - camY)); } });
+    }
+    for (const pk of this.visiblePickups()) {
+      const [px, py] = this.pickupTile(pk);
+      const spr = this.giftSprite || (this.giftSprite = LQ.makeChestSprite());
+      const bob = Math.floor(this.t / 20) % 2;
+      draws.push({ y: py * 16 + 14, fn: () => ctx.drawImage(spr, px * 16 - camX, py * 16 + 2 - bob - camY) });
     }
     draws.sort((a, b) => a.y - b.y);
     for (const d of draws) d.fn();

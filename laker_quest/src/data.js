@@ -42,6 +42,10 @@ LQ.ITEMS = {
   hoodie: { name: 'GVSU Hoodie', kind: 'equip', slot: 'body', def: 4, price: 40, desc: 'Laker blue. Defense +4.' },
   bat: { name: 'Laker Baseball Bat', kind: 'equip', slot: 'weapon', off: 6, price: 0, desc: 'Signed by the team. Offense +6.' },
   goggles: { name: 'Lab Goggles', kind: 'equip', slot: 'head', def: 3, price: 0, desc: 'Safety first! Defense +3.' },
+  pin: { name: 'Laker Pin', kind: 'equip', slot: 'charm', off: 2, def: 2, price: 0, desc: 'A library staff pin. Offense +2, Defense +2.' },
+  jersey: { name: 'Laker Jersey', kind: 'equip', slot: 'body', def: 7, price: 0, desc: 'A real game jersey. Defense +7.' },
+  lakercard: { name: 'Lakercard', kind: 'key', desc: 'Someone\'s student ID. The photo looks very tired.' },
+  gameball: { name: 'Game Ball', kind: 'key', desc: 'The football from Lubbers Stadium. Slightly chewed.' },
   score: { name: 'Carillon Score', kind: 'key', desc: 'Sheet music for the Cook Carillon. The melody feels important.' },
   key: { name: 'Tower Key', kind: 'key', desc: 'An old brass key labeled "CARILLON".' },
 };
@@ -174,6 +178,7 @@ LQ.LOOKS = {
   roommate: { hair: '#f0a040', skin: '#f8d0b0', shirt: '#9050c0', pants: '#4a4a5a' },
   groundskeeper: { hat: '#e08030', hair: '#5a5a5a', skin: '#e0a878', shirt: '#e08030', pants: '#3a4a3a' },
   kid: { hat: '#e04040', hair: '#4a3020', skin: '#f4c8a0', shirt: '#f0e040', pants: '#4060c0' },
+  neighbor: { hair: '#8a6a4a', skin: '#e0a878', shirt: '#c05050', pants: '#5a5a48', shoes: '#383028' },
   louie: { hat: '#0032a0', hair: '#0032a0', skin: '#f8f8f8', shirt: '#0032a0', pants: '#0032a0', shoes: '#f8f8f8' },
 };
 
@@ -225,6 +230,9 @@ LQ.NPCS = [
     talk: () => ['Everybody in south campus housing is up all night. The bells keep ringing at random times.', 'Some of the sophomores have gone feral.'] },
   { id: 'fisher', map: 'campus', img: [560, 114], look: 'groundskeeper', dir: 'right',
     talk: () => ['The Grand River. Flows all the way from Jackson down to Grand Haven and into Lake Michigan.', 'The ravines on campus all drain down here. Lately it\'s been snowing on just this one spot. In September.'] },
+  // ---------- Allendale
+  { id: 'neighbor', map: 'campus', tile: [50, 93], look: 'neighbor', dir: 'down', name: 'Neighbor',
+    talk: () => ['Allendale\'s quiet. Well, it was, until the bells started going off at midnight.'] },
   // ---------- interiors
   { id: 'roommate', map: 'frey', x: 8, y: 4, look: 'roommate', dir: 'down', name: 'Roommate',
     talk: (g) => g.flags.talkedRA

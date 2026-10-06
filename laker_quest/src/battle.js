@@ -66,6 +66,29 @@ LQ.BattleBG = class {
   }
 };
 
+// ------------------------------------------------------------ leveling
+// Raise the player's level for any experience they've banked. Returns the
+// lines to show; function entries play the level-up jingle when reached.
+LQ.levelUps = function (p) {
+  const lines = [];
+  while (p.level < LQ.MAX_LEVEL && p.exp >= LQ.EXP_TABLE[p.level + 1]) {
+    p.level++;
+    const g = (k) => LQ.rand(LQ.LEVEL_UP[k][0], LQ.LEVEL_UP[k][1]);
+    const hp = g('hp'), pp = g('pp'), off = g('off'), df = g('def'), spd = g('spd');
+    p.maxHp += hp; p.maxPp += pp; p.off += off; p.def += df; p.spd += spd;
+    lines.push(() => LQ.Sound.levelUp());
+    lines.push(p.name + ' reached level ' + p.level + '!');
+    lines.push('Offense +' + off + ', Defense +' + df + ', Speed +' + spd + '.');
+    lines.push('Max HP +' + hp + ', Max PP +' + pp + '.');
+    const learn = LQ.PSI_LEARN[p.level];
+    if (learn && !p.psi.includes(learn)) {
+      p.psi.push(learn);
+      lines.push(p.name + ' realized the power of ' + LQ.PSI[learn].name + '!');
+    }
+  }
+  return lines;
+};
+
 // ------------------------------------------------------------ battle
 LQ.Battle = class {
   constructor(game, enemyType, opts) {
@@ -73,6 +96,7 @@ LQ.Battle = class {
     this.game = game;
     this.p = game.player;
     const def = LQ.ENEMIES[enemyType];
+    this.type = enemyType;
     this.def = def;
     this.enemy = { name: def.name, hp: def.hp, maxHp: def.hp, off: def.off, def: def.def, spd: def.spd, level: def.level, boss: !!def.boss };
     this.bg = new LQ.BattleBG(def.bg);
@@ -288,21 +312,8 @@ LQ.Battle = class {
       p.goods.push(def.drop[0]);
       lines.push('The ' + def.name + ' left behind a ' + LQ.ITEMS[def.drop[0]].name + '!');
     }
-    while (p.level < LQ.MAX_LEVEL && p.exp >= LQ.EXP_TABLE[p.level + 1]) {
-      p.level++;
-      const g = (k) => LQ.rand(LQ.LEVEL_UP[k][0], LQ.LEVEL_UP[k][1]);
-      const hp = g('hp'), pp = g('pp'), off = g('off'), df = g('def'), spd = g('spd');
-      p.maxHp += hp; p.maxPp += pp; p.off += off; p.def += df; p.spd += spd;
-      lines.push(() => LQ.Sound.levelUp());
-      lines.push(p.name + ' reached level ' + p.level + '!');
-      lines.push('Offense +' + off + ', Defense +' + df + ', Speed +' + spd + '.');
-      lines.push('Max HP +' + hp + ', Max PP +' + pp + '.');
-      const learn = LQ.PSI_LEARN[p.level];
-      if (learn && !p.psi.includes(learn)) {
-        p.psi.push(learn);
-        lines.push(p.name + ' realized the power of ' + LQ.PSI[learn].name + '!');
-      }
-    }
+    lines.push(...LQ.levelUps(p));
+    if (this.game.onEnemyDefeated) this.game.onEnemyDefeated(this.type);
     lines.push(() => this.finish('win'));
     if (instant) this.sayNow(lines); else this.queue.push(...lines.map((l) => (typeof l === 'function' ? { fn: l } : { msg: l })));
   }

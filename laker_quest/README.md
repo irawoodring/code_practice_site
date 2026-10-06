@@ -1,6 +1,6 @@
 # Laker Quest
 
-An Earthbound-style 2D RPG set on Grand Valley State University's Allendale campus.
+A 16-bit style game, in the style of Earthbound, that takes place on Grand Valley State University's Allendale campus.
 
 At midnight the Cook Carillon rang thirteen times, out of tune, and since then campus has been strange. Squirrels pick fights, overdue books fly around the library, and the geese are worse than usual. Find out what's going on in the tower.
 
@@ -25,6 +25,25 @@ python3 -m http.server 8000
 | M | Campus map |
 
 Save by checking a phone (in Kirkhof, Zumberge, the Fieldhouse, your dorm, and a few other places) and calling home.
+
+## Side quests
+
+Besides the main story there are six side quests. Open the menu (X) and choose **Quests** to see what you've picked up and what's next.
+
+| Quest | Who gives it | What to do |
+| --- | --- | --- |
+| Goose Diplomacy | Groundskeeper at Zumberge Pond | Defeat 3 Ornery Geese |
+| The Lost Lakercard | Student in Kirkhof | Find the Lakercard by the Transformational Link |
+| Overdue Notice | Librarian (after you get the Carillon Score) | Defeat 4 Overdue Books |
+| Fourth and Long | Coach in the Fieldhouse (after the bat) | Find the game ball on Lubbers Field |
+| River Coffee | Angler on the Grand River | Bring a Coffee |
+| Pizza Run | Neighbor in Allendale | Bring a Pizza Slice |
+
+### Adding a quest
+
+Quests live in `src/quests.js`. Each quest is one entry in `LQ.QUESTS` with a title, the NPC who gives it, a goal line per step, a reward, and a `talk(g, q)` function for what the giver says at each step. The comment at the top of that file lists the helpers you can use: start a quest, move it to the next step, count enemies beaten since it started, check for and take items, and pay the reward. Items to find on the map go in `LQ.PICKUPS`; a pickup appears only while its quest is on the right step, and walking over it picks it up.
+
+To give a quest to a new character, add the NPC to `LQ.NPCS` in `src/data.js` (use `img` for a spot on GVSU's campus map image or `tile` for a map tile) and point the quest's `giver` at its id.
 
 ## Earthbound mechanics
 
@@ -73,6 +92,7 @@ python3 tools/osm_to_map.py map.osm --campus-image allendale_campus_map.jpg --pr
 | `src/campus.js` | Signs, interiors and map labels, placed in campus map coordinates |
 | `src/world.js` | Builds the playable map; draws tiles, buildings of any shape, trees and furniture |
 | `src/data.js` | Stats, items, PSI, enemies, NPC dialogue, interiors |
+| `src/quests.js` | Side quests and items to find on the map |
 | `src/battle.js` | Battle system and animated backgrounds |
 | `src/game.js` | Game states, overworld, menus, saving, ending |
 
