@@ -8,6 +8,7 @@ You're helping a teacher automate their grade book. Write three functions.
 
 Return the letter grade for a numeric score:
 
+```
 | Score         | Grade |
 |---------------|-------|
 | 90 and above  | `"A"` |
@@ -15,6 +16,7 @@ Return the letter grade for a numeric score:
 | 70 – 79.99    | `"C"` |
 | 60 – 69.99    | `"D"` |
 | below 60      | `"F"` |
+```
 
 If the score is less than 0 or greater than 100, raise a `ValueError`.
 
