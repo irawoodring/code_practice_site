@@ -6,7 +6,25 @@
     "readme": "readme.md"
   },
   {
+    "id": "bracket_balancer",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "class-BankAccount",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-Employee",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-LinkedList",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -36,6 +54,12 @@
     "readme": "readme.md"
   },
   {
+    "id": "class-Stack",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "combo_master",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -60,7 +84,19 @@
     "readme": "readme.md"
   },
   {
+    "id": "number_guessing_bot",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "palindrome_detective",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "password_checker",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -73,6 +109,18 @@
   },
   {
     "id": "pirate_treasure_map",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "prime_time",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "recursion_practice",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -91,6 +139,18 @@
   },
   {
     "id": "secret_agent_cipher",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "sorting_hat",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "tic_tac_toe_judge",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
