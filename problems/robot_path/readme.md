@@ -4,12 +4,10 @@
 
 A delivery robot lives on a giant grid. It starts at position `(0, 0)` and receives its instructions as a string of single-letter commands:
 
-| Command | Meaning              | Change      |
-|---------|----------------------|-------------|
-| `N`     | move north (up)      | `y + 1`     |
-| `S`     | move south (down)    | `y - 1`     |
-| `E`     | move east (right)    | `x + 1`     |
-| `W`     | move west (left)     | `x - 1`     |
+* `N` — move north (up): `y + 1`
+* `S` — move south (down): `y - 1`
+* `E` — move east (right): `x + 1`
+* `W` — move west (left): `x - 1`
 
 ---
 
