@@ -18,7 +18,25 @@
     "readme": "readme.md"
   },
   {
+    "id": "class-BinarySearchTree",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "class-Employee",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-Fraction",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-HashMap",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -37,6 +55,12 @@
   },
   {
     "id": "class-Pet",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "class-Queue",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -78,7 +102,25 @@
     "readme": "readme.md"
   },
   {
+    "id": "fizzbuzz_plus",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
     "id": "grade_book",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "matrix_tools",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "maze_solver",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -109,6 +151,12 @@
   },
   {
     "id": "pirate_treasure_map",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "pizza_party",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
@@ -151,6 +199,18 @@
   },
   {
     "id": "tic_tac_toe_judge",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "tip_calculator",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md"
+  },
+  {
+    "id": "weather_station",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
     "readme": "readme.md"
