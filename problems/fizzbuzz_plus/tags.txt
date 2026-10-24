@@ -1,0 +1,5 @@
+conditionals
+modulo
+loops
+lists
+tuples

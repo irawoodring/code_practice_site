@@ -28,7 +28,14 @@
     "id": "bracket_balancer",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "stacks",
+      "strings",
+      "dictionaries",
+      "indexes",
+      "loops"
+    ]
   },
   {
     "id": "class-BankAccount",
@@ -47,31 +54,64 @@
     "id": "class-BinarySearchTree",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "recursion",
+      "trees",
+      "data structures"
+    ]
   },
   {
     "id": "class-Employee",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "inheritance",
+      "properties",
+      "exceptions",
+      "string formatting"
+    ]
   },
   {
     "id": "class-Fraction",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "dunder methods",
+      "operator overloading",
+      "exceptions"
+    ]
   },
   {
     "id": "class-HashMap",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "hashing",
+      "lists",
+      "tuples",
+      "data structures"
+    ]
   },
   {
     "id": "class-LinkedList",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "linked lists",
+      "while loops",
+      "data structures",
+      "exceptions"
+    ]
   },
   {
     "id": "class-Movie",
@@ -115,7 +155,14 @@
     "id": "class-Queue",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "queues",
+      "dunder methods",
+      "exceptions",
+      "data structures"
+    ]
   },
   {
     "id": "class-Rectangle",
@@ -160,7 +207,14 @@
     "id": "class-Stack",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "stacks",
+      "dunder methods",
+      "exceptions",
+      "data structures"
+    ]
   },
   {
     "id": "combo_master",
@@ -203,7 +257,14 @@
     "id": "fizzbuzz_plus",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "conditionals",
+      "modulo",
+      "loops",
+      "lists",
+      "tuples"
+    ]
   },
   {
     "id": "grade_book",
@@ -232,6 +293,31 @@
     ]
   },
   {
+    "id": "matrix_tools",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "nested lists",
+      "nested loops",
+      "list comprehensions",
+      "exceptions"
+    ]
+  },
+  {
+    "id": "maze_solver",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "nested lists",
+      "queues",
+      "breadth-first search",
+      "sets",
+      "tuples"
+    ]
+  },
+  {
     "id": "minesweeper_hints",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -245,22 +331,16 @@
     ]
   },
   {
-    "id": "matrix_tools",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
-    "id": "maze_solver",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
     "id": "number_guessing_bot",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "binary search",
+      "while loops",
+      "lists",
+      "indexes"
+    ]
   },
   {
     "id": "palindrome_detective",
@@ -278,7 +358,14 @@
     "id": "password_checker",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "string methods",
+      "loops",
+      "conditionals",
+      "lists"
+    ]
   },
   {
     "id": "pirate_radio_decoder",
@@ -305,6 +392,30 @@
     ]
   },
   {
+    "id": "pizza_party",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "recursion",
+      "lists",
+      "combinations"
+    ]
+  },
+  {
+    "id": "prime_time",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "loops",
+      "modulo",
+      "while loops",
+      "lists",
+      "helper functions"
+    ]
+  },
+  {
     "id": "recipe_scaler",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -318,22 +429,15 @@
     ]
   },
   {
-    "id": "pizza_party",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
-    "id": "prime_time",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
     "id": "recursion_practice",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "recursion",
+      "strings",
+      "lists"
+    ]
   },
   {
     "id": "robot_path",
@@ -414,6 +518,43 @@
     ]
   },
   {
+    "id": "sorting_hat",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "sorting algorithms",
+      "lists",
+      "nested loops",
+      "indexes"
+    ]
+  },
+  {
+    "id": "tic_tac_toe_judge",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "nested lists",
+      "indexes",
+      "conditionals",
+      "loops",
+      "helper functions"
+    ]
+  },
+  {
+    "id": "tip_calculator",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "default arguments",
+      "floats",
+      "exceptions",
+      "helper functions"
+    ]
+  },
+  {
     "id": "unique_visitors",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
@@ -425,28 +566,17 @@
     ]
   },
   {
-    "id": "sorting_hat",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
-    "id": "tic_tac_toe_judge",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
-    "id": "tip_calculator",
-    "source": "mymodule.py",
-    "test": "test_mymodule.py",
-    "readme": "readme.md"
-  },
-  {
     "id": "weather_station",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "lists",
+      "loops",
+      "slicing",
+      "floats",
+      "running max"
+    ]
   },
   {
     "id": "wizard_spellbook",

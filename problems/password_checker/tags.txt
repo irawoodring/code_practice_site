@@ -1,0 +1,5 @@
+strings
+string methods
+loops
+conditionals
+lists

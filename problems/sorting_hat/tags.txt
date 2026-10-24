@@ -1,0 +1,4 @@
+sorting algorithms
+lists
+nested loops
+indexes

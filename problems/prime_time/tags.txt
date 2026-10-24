@@ -1,0 +1,5 @@
+loops
+modulo
+while loops
+lists
+helper functions

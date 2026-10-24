@@ -1,0 +1,4 @@
+binary search
+while loops
+lists
+indexes
