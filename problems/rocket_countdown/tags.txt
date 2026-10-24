@@ -1,0 +1,5 @@
+while loops
+lists
+conditionals
+exceptions
+counting

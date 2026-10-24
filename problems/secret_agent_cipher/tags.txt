@@ -1,0 +1,5 @@
+strings
+loops
+ord & chr
+modulo
+helper functions

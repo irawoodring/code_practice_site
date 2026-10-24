@@ -1,0 +1,5 @@
+nested lists
+nested loops
+indexes
+strings
+conditionals

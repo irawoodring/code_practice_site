@@ -3,7 +3,26 @@
     "id": "alien_message_decoder",
     "source": "mymodule.py",
     "test": "test_module.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "conditionals",
+      "ord & chr"
+    ]
+  },
+  {
+    "id": "anagram_groups",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "sorting",
+      "dictionaries",
+      "lists",
+      "helper functions"
+    ]
   },
   {
     "id": "bracket_balancer",
@@ -15,7 +34,14 @@
     "id": "class-BankAccount",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "properties",
+      "exceptions",
+      "default arguments",
+      "string formatting"
+    ]
   },
   {
     "id": "class-BinarySearchTree",
@@ -51,13 +77,39 @@
     "id": "class-Movie",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "properties",
+      "exceptions",
+      "string formatting"
+    ]
   },
   {
     "id": "class-Pet",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "properties",
+      "exceptions",
+      "methods"
+    ]
+  },
+  {
+    "id": "class-Playlist",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "composition",
+      "properties",
+      "dunder methods",
+      "exceptions",
+      "lists"
+    ]
   },
   {
     "id": "class-Queue",
@@ -69,13 +121,40 @@
     "id": "class-Rectangle",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "properties",
+      "exceptions",
+      "methods",
+      "dunder methods"
+    ]
+  },
+  {
+    "id": "class-Shape",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "inheritance",
+      "methods",
+      "dunder methods",
+      "exceptions"
+    ]
   },
   {
     "id": "class-Softdrink",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "classes",
+      "properties",
+      "exceptions",
+      "type checking",
+      "string formatting"
+    ]
   },
   {
     "id": "class-Stack",
@@ -87,19 +166,38 @@
     "id": "combo_master",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "conditionals",
+      "running max"
+    ]
   },
   {
     "id": "count_votes",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "lists",
+      "dictionaries",
+      "loops",
+      "tuples",
+      "running max"
+    ]
   },
   {
     "id": "dragon_hoard",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "dictionaries",
+      "lists",
+      "loops",
+      "running max"
+    ]
   },
   {
     "id": "fizzbuzz_plus",
@@ -111,7 +209,40 @@
     "id": "grade_book",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "conditionals",
+      "exceptions",
+      "lists",
+      "dictionaries",
+      "helper functions"
+    ]
+  },
+  {
+    "id": "leaderboard",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "sorting",
+      "dictionaries",
+      "tuples",
+      "lists",
+      "lambdas"
+    ]
+  },
+  {
+    "id": "minesweeper_hints",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "nested lists",
+      "nested loops",
+      "indexes",
+      "strings",
+      "conditionals"
+    ]
   },
   {
     "id": "matrix_tools",
@@ -135,7 +266,13 @@
     "id": "palindrome_detective",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "slicing",
+      "lists",
+      "nested loops"
+    ]
   },
   {
     "id": "password_checker",
@@ -147,13 +284,38 @@
     "id": "pirate_radio_decoder",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "slicing",
+      "indexes"
+    ]
   },
   {
     "id": "pirate_treasure_map",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "lists",
+      "loops",
+      "indexes",
+      "running max"
+    ]
+  },
+  {
+    "id": "recipe_scaler",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "dictionaries",
+      "tuples",
+      "floats",
+      "string formatting",
+      "exceptions"
+    ]
   },
   {
     "id": "pizza_party",
@@ -177,19 +339,90 @@
     "id": "robot_path",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "tuples",
+      "sets",
+      "exceptions"
+    ]
   },
   {
     "id": "rock_paper_scissors",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "dictionaries",
+      "lists",
+      "tuples",
+      "conditionals",
+      "exceptions",
+      "helper functions"
+    ]
+  },
+  {
+    "id": "rocket_countdown",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "while loops",
+      "lists",
+      "conditionals",
+      "exceptions",
+      "counting"
+    ]
+  },
+  {
+    "id": "roman_numerals",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "dictionaries",
+      "while loops",
+      "tuples",
+      "strings",
+      "exceptions"
+    ]
+  },
+  {
+    "id": "run_length_encoding",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "string building",
+      "helper functions"
+    ]
   },
   {
     "id": "secret_agent_cipher",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "ord & chr",
+      "modulo",
+      "helper functions"
+    ]
+  },
+  {
+    "id": "unique_visitors",
+    "source": "mymodule.py",
+    "test": "test_mymodule.py",
+    "readme": "readme.md",
+    "tags": [
+      "sets",
+      "lists",
+      "sorting"
+    ]
   },
   {
     "id": "sorting_hat",
@@ -219,12 +452,24 @@
     "id": "wizard_spellbook",
     "source": "mymodule.py",
     "test": "test_spellbook.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "conditionals",
+      "counting"
+    ]
   },
   {
     "id": "word_score",
     "source": "mymodule.py",
     "test": "test_mymodule.py",
-    "readme": "readme.md"
+    "readme": "readme.md",
+    "tags": [
+      "strings",
+      "loops",
+      "conditionals",
+      "counting"
+    ]
   }
 ]

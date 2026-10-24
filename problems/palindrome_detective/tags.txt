@@ -1,0 +1,4 @@
+strings
+slicing
+lists
+nested loops

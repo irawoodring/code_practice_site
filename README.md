@@ -4,4 +4,4 @@ Simple site to give students in-browser practice problems.
 
 ## Adding Problems
 
-Create a directory for the problem (follow naming convention).  Add a `readme.md` problem description, a `mymodule.py` with any starter code, and a `test_mymodule.py` file of pytest test cases.  Regenerate `index.json` to include newly added problems.
+Create a directory for the problem (follow naming convention).  Add a `readme.md` problem description, a `mymodule.py` with any starter code, and a `test_mymodule.py` file of pytest test cases.  Optionally add a `tags.txt` listing what the problem helps students practice, one tag per line (e.g. `loops`, `dictionaries`); reuse existing tags where possible so the site's tag filter stays useful.  Regenerate `index.json` to include newly added problems.

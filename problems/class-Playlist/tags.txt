@@ -1,0 +1,6 @@
+classes
+composition
+properties
+dunder methods
+exceptions
+lists
