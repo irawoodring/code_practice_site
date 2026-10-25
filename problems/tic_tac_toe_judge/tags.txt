@@ -1,5 +1,6 @@
-nested lists
-indexes
+CS1
+2D lists
+indexing & slicing
 conditionals
 loops
-helper functions
+functions

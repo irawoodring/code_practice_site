@@ -1,4 +1,5 @@
-binary search
+CS2
+searching
 while loops
 lists
-indexes
+indexing & slicing

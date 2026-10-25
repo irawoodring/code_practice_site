@@ -1,5 +1,6 @@
+CS1
 loops
 modulo
 while loops
 lists
-helper functions
+functions

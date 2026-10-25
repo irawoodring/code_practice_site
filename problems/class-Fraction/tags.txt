@@ -1,4 +1,4 @@
+CS2
 classes
 dunder methods
-operator overloading
 exceptions

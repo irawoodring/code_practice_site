@@ -1,4 +1,4 @@
+CS1
 strings
 loops
 conditionals
-ord & chr

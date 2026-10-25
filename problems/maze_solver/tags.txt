@@ -1,5 +1,6 @@
-nested lists
+CS2
+2D lists
 queues
-breadth-first search
+searching
 sets
 tuples

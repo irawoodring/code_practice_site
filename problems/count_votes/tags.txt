@@ -1,5 +1,6 @@
+CS1
 lists
 dictionaries
 loops
 tuples
-running max
+finding the max

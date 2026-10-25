@@ -1,4 +1,4 @@
-nested lists
-nested loops
+CS1
+2D lists
 list comprehensions
 exceptions

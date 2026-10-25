@@ -241,41 +241,43 @@
     margin-bottom: 16px;
   }
 
-  #problem-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .picker {
     padding: 14px;
   }
 
-  .problem-btn {
-    background: transparent;
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 8px 14px;
+  .picker-step {
+    margin-bottom: 16px;
+  }
+
+  .picker-step h3 {
+    margin: 0 0 8px;
     font-size: 13px;
-    cursor: pointer;
+    font-weight: 600;
   }
 
-  .problem-btn:hover:not(:disabled) {
-    border-color: var(--accent);
-    color: var(--accent);
+  .picker-step h3 .hint {
+    color: var(--muted);
+    font-weight: 400;
   }
 
-  .problem-btn.active {
-    border-color: var(--accent);
-    color: var(--accent);
-    background: rgba(79, 176, 255, 0.1);
+  .skill-group {
+    display: grid;
+    grid-template-columns: 130px 1fr;
+    gap: 6px 12px;
+    align-items: baseline;
+    margin-bottom: 6px;
   }
 
-  .problem-btn:disabled {
-    opacity: 0.5;
-    cursor: default;
+  .skill-group .group-name {
+    font-size: 12px;
+    color: var(--muted);
   }
 
-  .problem-btn .tag-row {
-    margin-top: 6px;
+  @media (max-width: 600px) {
+    .skill-group {
+      grid-template-columns: 1fr;
+      margin-bottom: 10px;
+    }
   }
 
   .tag-row {
@@ -295,39 +297,127 @@
     white-space: nowrap;
   }
 
-  #tag-filter {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-    padding: 14px 14px 0;
+  .tag.level {
+    border-color: var(--accent);
+    color: var(--accent);
   }
 
-  #tag-filter:empty {
-    display: none;
-  }
-
-  #tag-filter .label {
-    font-size: 12px;
-    color: var(--muted);
-    margin-right: 4px;
+  .tag.match {
+    border-color: var(--accent);
+    color: var(--text);
+    background: rgba(79, 176, 255, 0.15);
   }
 
   button.tag {
     cursor: pointer;
     font-size: 12px;
-    padding: 3px 10px;
+    padding: 4px 11px;
+    color: var(--text);
   }
 
-  button.tag:hover {
+  button.tag .count {
+    color: var(--muted);
+    margin-left: 4px;
+  }
+
+  button.tag.course {
+    font-size: 13px;
+    padding: 6px 16px;
+  }
+
+  button.tag:hover:not(:disabled) {
     border-color: var(--accent);
     color: var(--accent);
   }
 
   button.tag.active {
     border-color: var(--accent);
+    color: var(--bg);
+    background: var(--accent);
+  }
+
+  button.tag.active .count {
+    color: inherit;
+  }
+
+  button.tag:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
+
+  #problem-search {
+    width: 100%;
+    max-width: 360px;
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+
+  #problem-search:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+
+  .results {
+    border-top: 1px solid var(--border);
+    padding: 14px;
+  }
+
+  .results-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 13px;
+  }
+
+  .link-btn {
+    background: none;
+    border: none;
     color: var(--accent);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  #problem-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 8px;
+  }
+
+  .problem-btn {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .problem-btn .problem-name {
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .problem-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+  }
+
+  .problem-btn.active {
+    border-color: var(--accent);
     background: rgba(79, 176, 255, 0.1);
+  }
+
+  .problem-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 
   #problems-status {
@@ -338,6 +428,16 @@
   #readme-panel {
     margin-bottom: 16px;
     display: none;
+  }
+
+  #readme-panel .panel-head {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px 12px;
+  }
+
+  #readme-title {
+    white-space: nowrap;
   }
 
   #readme-content {
@@ -446,10 +546,28 @@
       <span>Practice Problems</span>
     </div>
 
-    <div id="tag-filter"></div>
+    <div class="picker">
+      <div class="picker-step">
+        <h3>1. Which course are you in? <span class="hint">(optional)</span></h3>
+        <div id="course-filter" class="tag-row"></div>
+      </div>
 
-    <div id="problem-list">
-      <span class="status">Loading problem list…</span>
+      <div class="picker-step">
+        <h3>2. What do you want to practice?</h3>
+        <div id="skill-filter">
+          <span class="status">Loading problem list…</span>
+        </div>
+      </div>
+
+      <input id="problem-search" type="search" placeholder="Or search problems by name…" aria-label="Search problems by name" />
+    </div>
+
+    <div class="results">
+      <div class="results-head">
+        <span id="results-title"></span>
+        <button id="clear-filters" class="link-btn" type="button" hidden>Clear choices</button>
+      </div>
+      <div id="problem-list"></div>
     </div>
 
     <p id="problems-status" class="status"></p>
@@ -887,68 +1005,147 @@ function prettifyName(folderName) {
 }
 
 // ---- Tags ----
-// Each problem's tags (from its tags.txt) say what it helps you practice.
-function makeTagRow(tags) {
+// Each problem's tags.txt lists its course (CS1 or CS2) and the skills it
+// practices. Skills are shown under these headings; any tag not listed here
+// shows up under "Other".
+const COURSES = ["CS1", "CS2"];
+const SKILL_GROUPS = [
+  ["Python basics", ["conditionals", "loops", "while loops", "functions", "exceptions", "recursion"]],
+  ["Strings", ["strings", "string formatting", "indexing & slicing"]],
+  ["Collections", ["lists", "list comprehensions", "2D lists", "dictionaries", "tuples", "sets"]],
+  ["Numbers", ["modulo", "floats & rounding"]],
+  ["Classes", ["classes", "properties", "dunder methods", "inheritance", "composition"]],
+  ["Data structures", ["stacks", "queues", "linked lists", "trees", "hashing"]],
+  ["Algorithms", ["counting", "finding the max", "sorting", "searching"]],
+];
+
+let allProblems = [];
+let activeCourse = null;
+let activeSkill = null;
+let activeProblemId = null;
+
+const courseOf = (p) => (p.tags || []).find((t) => COURSES.includes(t));
+const skillsOf = (p) => (p.tags || []).filter((t) => !COURSES.includes(t));
+
+function makeTagRow(problem) {
   const row = document.createElement("span");
   row.className = "tag-row";
-  tags.forEach((tag) => {
+  const add = (text, cls) => {
     const chip = document.createElement("span");
-    chip.className = "tag";
-    chip.textContent = tag;
+    chip.className = "tag" + (cls ? " " + cls : "");
+    chip.textContent = text;
     row.appendChild(chip);
-  });
+  };
+  const course = courseOf(problem);
+  if (course) add(course, "level");
+  skillsOf(problem).forEach((t) => add(t, t === activeSkill ? "match" : ""));
   return row;
 }
 
-let activeTag = null;
+function makeFilterButton(tag, extraClass, onClick) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "tag " + extraClass;
+  btn.dataset.tag = tag;
+  btn.append(tag);
+  const count = document.createElement("span");
+  count.className = "count";
+  btn.appendChild(count);
+  btn.addEventListener("click", () => onClick(tag));
+  return btn;
+}
 
-function applyTagFilter() {
-  document.querySelectorAll(".problem-btn").forEach((btn) => {
-    const tags = JSON.parse(btn.dataset.tags || "[]");
-    btn.style.display = !activeTag || tags.includes(activeTag) ? "" : "none";
-  });
-  document.querySelectorAll("#tag-filter button.tag").forEach((b) => {
-    b.classList.toggle("active", (b.dataset.tag || null) === activeTag);
+function buildFilters() {
+  const courseEl = document.getElementById("course-filter");
+  courseEl.innerHTML = "";
+  COURSES.forEach((c) => courseEl.appendChild(
+    makeFilterButton(c, "course", (tag) => {
+      activeCourse = activeCourse === tag ? null : tag;
+      render();
+    })
+  ));
+
+  const used = new Set(allProblems.flatMap(skillsOf));
+  const grouped = new Set(SKILL_GROUPS.flatMap(([, tags]) => tags));
+  const other = [...used].filter((t) => !grouped.has(t)).sort();
+  const groups = [...SKILL_GROUPS, ["Other", other]];
+
+  const skillEl = document.getElementById("skill-filter");
+  skillEl.innerHTML = "";
+  groups.forEach(([name, tags]) => {
+    const present = tags.filter((t) => used.has(t));
+    if (present.length === 0) return;
+    const group = document.createElement("div");
+    group.className = "skill-group";
+    const label = document.createElement("span");
+    label.className = "group-name";
+    label.textContent = name;
+    const row = document.createElement("div");
+    row.className = "tag-row";
+    present.forEach((t) => row.appendChild(
+      makeFilterButton(t, "skill", (tag) => {
+        activeSkill = activeSkill === tag ? null : tag;
+        render();
+      })
+    ));
+    group.append(label, row);
+    skillEl.appendChild(group);
   });
 }
 
-function buildTagFilter(problems) {
-  const filterEl = document.getElementById("tag-filter");
-  filterEl.innerHTML = "";
-  const counts = {};
-  problems.forEach((p) => (p.tags || []).forEach((t) => {
-    counts[t] = (counts[t] || 0) + 1;
-  }));
-  const tags = Object.keys(counts).sort((a, b) => a.localeCompare(b));
-  if (tags.length === 0) return;
+function render() {
+  const search = document.getElementById("problem-search").value.trim().toLowerCase();
+  const inCourse = (p) => !activeCourse || courseOf(p) === activeCourse;
 
-  const label = document.createElement("span");
-  label.className = "label";
-  label.textContent = "Practice:";
-  filterEl.appendChild(label);
+  // Counts show how many problems each choice would give, given the other choice.
+  document.querySelectorAll("#course-filter button").forEach((b) => {
+    const n = allProblems.filter((p) => courseOf(p) === b.dataset.tag &&
+      (!activeSkill || skillsOf(p).includes(activeSkill))).length;
+    b.querySelector(".count").textContent = n;
+    b.classList.toggle("active", b.dataset.tag === activeCourse);
+    b.disabled = n === 0 && b.dataset.tag !== activeCourse;
+  });
+  document.querySelectorAll("#skill-filter button").forEach((b) => {
+    const n = allProblems.filter((p) => inCourse(p) && skillsOf(p).includes(b.dataset.tag)).length;
+    b.querySelector(".count").textContent = n;
+    b.classList.toggle("active", b.dataset.tag === activeSkill);
+    b.disabled = n === 0 && b.dataset.tag !== activeSkill;
+  });
 
-  const addChip = (text, tag) => {
-    const chip = document.createElement("button");
-    chip.type = "button";
-    chip.className = "tag";
-    chip.textContent = text;
-    if (tag) chip.dataset.tag = tag;
-    chip.addEventListener("click", () => {
-      // Clicking the active tag again clears the filter.
-      activeTag = tag && tag !== activeTag ? tag : null;
-      applyTagFilter();
-    });
-    filterEl.appendChild(chip);
-  };
+  const titleEl = document.getElementById("results-title");
+  const listEl = document.getElementById("problem-list");
+  document.getElementById("clear-filters").hidden = !(activeCourse || activeSkill || search);
+  listEl.innerHTML = "";
 
-  addChip("All", null);
-  tags.forEach((t) => addChip(`${t} (${counts[t]})`, t));
-  applyTagFilter();
+  if (!activeCourse && !activeSkill && !search) {
+    titleEl.innerHTML = '<span class="status">Choose a course or a skill above to see matching problems.</span>';
+    return;
+  }
+
+  const matches = allProblems.filter((p) =>
+    inCourse(p) &&
+    (!activeSkill || skillsOf(p).includes(activeSkill)) &&
+    (!search || prettifyName(p.id).toLowerCase().includes(search))
+  );
+
+  const parts = [activeCourse, activeSkill, search && `"${search}"`].filter(Boolean);
+  titleEl.textContent = `${matches.length} problem${matches.length === 1 ? "" : "s"} for ${parts.join(" + ")}`;
+
+  matches.forEach((problem) => {
+    const btn = document.createElement("button");
+    btn.className = "problem-btn";
+    btn.classList.toggle("active", problem.id === activeProblemId);
+    const name = document.createElement("div");
+    name.className = "problem-name";
+    name.textContent = prettifyName(problem.id);
+    btn.append(name, makeTagRow(problem));
+    btn.addEventListener("click", () => loadProblem(problem, btn));
+    listEl.appendChild(btn);
+  });
 }
 
 // ---- Problem loading ----
 async function loadProblemList() {
-  const listEl = document.getElementById("problem-list");
   try {
     const res = await fetch(`${BASE}/index.json`);
     if (!res.ok) {
@@ -957,8 +1154,8 @@ async function loadProblemList() {
       );
     }
     const problems = await res.json();
-    listEl.innerHTML = "";
     if (problems.length === 0) {
+      document.getElementById("skill-filter").innerHTML = "";
       setProblemsStatus(
         "No problems found in the problems/ folder.",
         "fail"
@@ -966,33 +1163,26 @@ async function loadProblemList() {
       return;
     }
 
-    problems
-      .slice()
-      .sort((a, b) => a.id.localeCompare(b.id))
-      .forEach((problem) => {
-        const btn = document.createElement("button");
-        btn.className = "problem-btn";
-        btn.dataset.tags = JSON.stringify(problem.tags || []);
-        const name = document.createElement("div");
-        name.textContent = prettifyName(problem.id);
-        btn.appendChild(name);
-        if (problem.tags?.length) {
-          btn.appendChild(makeTagRow(problem.tags));
-        }
-        btn.addEventListener("click", () => loadProblem(problem, btn));
-        listEl.appendChild(btn);
-      });
-
-    buildTagFilter(problems);
+    allProblems = problems.slice().sort((a, b) => a.id.localeCompare(b.id));
+    buildFilters();
+    render();
     setProblemsStatus("");
   } catch (err) {
-    listEl.innerHTML = "";
+    document.getElementById("skill-filter").innerHTML = "";
     setProblemsStatus(
       "Couldn't load problem list: " + err.message,
       "fail"
     );
   }
 }
+
+document.getElementById("problem-search").addEventListener("input", render);
+document.getElementById("clear-filters").addEventListener("click", () => {
+  activeCourse = null;
+  activeSkill = null;
+  document.getElementById("problem-search").value = "";
+  render();
+});
 
 async function loadProblem(problem, clickedBtn) {
   const allBtns = document.querySelectorAll(".problem-btn");
@@ -1002,6 +1192,7 @@ async function loadProblem(problem, clickedBtn) {
   });
 
   clickedBtn.classList.add("active");
+  activeProblemId = problem.id;
   setProblemsStatus(`Loading "${prettifyName(problem.id)}"…`);
 
   try {
@@ -1039,8 +1230,7 @@ async function loadProblem(problem, clickedBtn) {
     if (readmeText) {
       document.getElementById("readme-title").textContent =
         prettifyName(problem.id);
-      document.getElementById("readme-tags")
-        .replaceChildren(...(problem.tags?.length ? makeTagRow(problem.tags).children : []));
+      document.getElementById("readme-tags").replaceChildren(...makeTagRow(problem).children);
       document.getElementById("readme-content").innerHTML =
         renderMarkdown(readmeText);
       readmePanel.style.display = "block";

@@ -1,5 +1,5 @@
+CS1
 classes
 properties
 exceptions
-methods
 dunder methods

@@ -1,5 +1,6 @@
+CS1
 dictionaries
 tuples
-floats
+floats & rounding
 string formatting
 exceptions

@@ -1,5 +1,5 @@
-nested lists
-nested loops
-indexes
+CS1
+2D lists
+indexing & slicing
 strings
 conditionals

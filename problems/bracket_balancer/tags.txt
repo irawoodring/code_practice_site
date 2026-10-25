@@ -1,5 +1,6 @@
+CS2
 stacks
 strings
 dictionaries
-indexes
+indexing & slicing
 loops

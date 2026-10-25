@@ -1,4 +1,5 @@
+CS1
 strings
-slicing
+indexing & slicing
 lists
-nested loops
+2D lists

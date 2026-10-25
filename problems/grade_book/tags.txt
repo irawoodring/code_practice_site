@@ -1,5 +1,6 @@
+CS1
 conditionals
 exceptions
 lists
 dictionaries
-helper functions
+functions

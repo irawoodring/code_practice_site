@@ -1,5 +1,6 @@
+CS1
 strings
 sorting
 dictionaries
 lists
-helper functions
+functions
